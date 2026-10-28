@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- With Cheat Menu installed, its Mod tests tab has Loot Restock buttons: show this location's restock state, restock here now, make the restock due today, and reset all timers.
+
 ## 0.1.0
 
 - First release.

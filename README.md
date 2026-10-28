@@ -11,6 +11,7 @@ In Survival Log, each location is stocked once, and survival point cards add to 
 - **Its own timer for each location**: small places like the Gas Station restock in 3-5 days, big ones like the Tech Company in 6-9. You can change each range.
 - **No piling up**: after a restock, a location waits until you explore it again. A place you skip or only half search never restocks twice.
 - **Same loot as the game**: a restock uses the same loot table the game uses for that container and your character, at the location's current discovery level from survival point cards.
+- **Test buttons**: with Cheat Menu installed, its Mod tests tab shows this location's restock state, restocks it right away, makes its restock due today, or resets every timer.
 
 Restocks happen when you arrive at a location, not overnight. Restocked containers show as unsearched again. Only the six post-disaster exploration locations restock: Hardware Store, Gas Station, Deserted Supermarket, Abandoned School, Abandoned Hospital and Tech Company. Your home, camps and pre-disaster locations are not affected.
 

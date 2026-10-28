@@ -67,15 +67,57 @@ internal static class RestockHooks
     {
         var containers = Containers(here);
         var opened = containers.Where(c => c.Furniture.HasSearched).ToList();
-        var state = new LocationState(LocationState.Decode(GameCounter.GetCounter(DueKey(here.MapId))), LocationState.Decode(GameCounter.GetCounter(VisitKey(here.MapId))));
+        var state = Read(here.MapId);
         var arrival = RestockRules.Arrive(here.MapId, new Visit(here.Today, containers.Count, opened.Count, state), _settings);
 
         if (arrival.DueDay is { } due) _log?.LogInfo($"{here.Name} explored ({opened.Count} of {containers.Count} containers opened), restocks on day {due}");
         if (arrival.Restock) Restock(here, opened);
 
-        GameCounter.SetCounter(DueKey(here.MapId), LocationState.Encode(arrival.Next.DueDay));
-        GameCounter.SetCounter(VisitKey(here.MapId), LocationState.Encode(arrival.Next.LastVisitDay));
+        Write(here.MapId, arrival.Next);
     }
+
+    // ----- for the test cheats (DevCheats) -----
+
+    /// <summary>Where you are now, when it is a post-disaster exploration location.</summary>
+    internal static Here? Current() => GameSingleton.Existing<BattleLogicWorld>()?._FurnitureLootManager is { } loot ? Locate(loot) : null;
+
+    internal static bool InGame => GameSingleton.Existing<BattleLogicWorld>()?._GameTimeManager != null;
+
+    internal static int Today => GameSingleton.Existing<BattleLogicWorld>()?._GameTimeManager?.GetDay() ?? 0;
+
+    internal static RestockSettings Settings => _settings;
+
+    /// <summary>This location's containers: how many there are and how many are opened.</summary>
+    internal static (int Containers, int Opened) Count(Here here)
+    {
+        var containers = Containers(here);
+
+        return (containers.Count, containers.Count(c => c.Furniture.HasSearched));
+    }
+
+    /// <summary>Restocks the opened containers here now, whatever the timer says, and waits to be explored again as a restock does.</summary>
+    internal static int RestockNow(Here here)
+    {
+        var opened = Containers(here).Where(c => c.Furniture.HasSearched).ToList();
+
+        if (opened.Count == 0) return 0;
+
+        Restock(here, opened);
+        Write(here.MapId, new LocationState(null, here.Today));
+
+        return opened.Count;
+    }
+
+    internal static LocationState Read(int mapId) =>
+        new(LocationState.Decode(GameCounter.GetCounter(DueKey(mapId))), LocationState.Decode(GameCounter.GetCounter(VisitKey(mapId))));
+
+    internal static void Write(int mapId, LocationState state)
+    {
+        GameCounter.SetCounter(DueKey(mapId), LocationState.Encode(state.DueDay));
+        GameCounter.SetCounter(VisitKey(mapId), LocationState.Encode(state.LastVisitDay));
+    }
+
+    internal static string NameOf(int mapId) => Locations.Known.FirstOrDefault(l => l.MapId == mapId)?.English ?? $"location {mapId}";
 
     private static void Restock(Here here, List<Container> opened)
     {
@@ -131,7 +173,6 @@ internal static class RestockHooks
         return found;
     }
 
-    private static string NameOf(int mapId) => Locations.Known.FirstOrDefault(l => l.MapId == mapId)?.English ?? $"location {mapId}";
 
     private static string DueKey(int mapId) => $"lootrestock.due.{mapId}";
 
@@ -142,7 +183,7 @@ internal static class RestockHooks
         if (Reported.Add(operation)) _log?.LogError($"{operation} failed, the location keeps the game's own loot (each kind reported once): {ex}");
     }
 
-    private sealed record Here(BattleLogicWorld World, ConfigManager Configs, int MapId, int Character, int Today, string Name);
+    internal sealed record Here(BattleLogicWorld World, ConfigManager Configs, int MapId, int Character, int Today, string Name);
 
     private sealed record Container(Furniture Furniture, int Group, int Count);
 }

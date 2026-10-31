@@ -19,12 +19,13 @@ public static class DevCheats
 
         var (containers, opened) = RestockHooks.Count(here!);
         var state = RestockHooks.Read(here!.MapId);
-        var explored = RestockRules.IsExplored(containers, opened, RestockHooks.Settings.ExploredShare);
+        var visit = new Visit(here.Today, containers, opened, state);
+        var explored = RestockRules.IsExplored(visit.Refillable, visit.Explored, RestockHooks.Settings.ExploredShare);
         var timer = state.StartDay is { } s ? $"timer started on day {s}, restocks on day {RestockRules.DueDay(here.MapId, s, RestockHooks.Settings)}" : "no timer running";
-        var visit = state.LastVisitDay is { } v ? $"day {v}" : "none";
+        var lastVisit = state.LastVisitDay is { } v ? $"day {v}" : "none";
         var restocked = state.LastRestockDay is { } r ? $"day {r}" : "none";
 
-        return $"{here.Name}, today is day {here.Today}: {opened} of {containers} containers opened, {(explored ? "explored" : "not explored")}. {timer}, last visit {visit}, last restock {restocked}.";
+        return $"{here.Name}, today is day {here.Today}: {RestockRules.Opened(visit)}, {(explored ? "explored" : "not explored")}. {timer}, last visit {lastVisit}, last restock {restocked}.";
     }
 
     [DisplayName("Show all locations\n查看所有地点")]
@@ -38,9 +39,9 @@ public static class DevCheats
     {
         if (Where(out var here) is { } problem) return problem;
 
-        var count = RestockHooks.RestockNow(here!);
+        var (opened, refilled) = RestockHooks.RestockNow(here!);
 
-        return count == 0 ? $"{here!.Name}: no opened containers to restock" : $"{here!.Name}: restocked {count} containers";
+        return opened == 0 ? $"{here!.Name}: no opened containers to restock" : $"{here!.Name}: {refilled} of {opened} opened containers got something back";
     }
 
     [DisplayName("Restock due today\n今天到补货日")]
@@ -57,7 +58,10 @@ public static class DevCheats
 
         RestockHooks.Write(here.MapId, state with { StartDay = start });
 
-        return $"{here.Name}: restock due on day {due}, today is day {here.Today}. Leave and come back to restock.";
+        // Early in a save a timer cannot have started long enough ago, so the restock day can still be ahead.
+        return due <= here.Today
+            ? $"{here.Name}: restock due on day {due}, today is day {here.Today}. Leave and come back to restock."
+            : $"{here.Name}: the earliest the restock can be due is day {due}, today is day {here.Today}. Come back on that day to restock.";
     }
 
     [DisplayName("Reset all timers\n重置所有倒计时")]

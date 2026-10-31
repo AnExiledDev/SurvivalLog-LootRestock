@@ -199,6 +199,43 @@ public class ArriveTests
     }
 
     [Fact]
+    public void Containers_a_restock_left_empty_do_not_count_toward_exploring_again()
+    {
+        // 155 containers, 60 got nothing back at the last restock and stay opened. Opening 19 more is not half of
+        // the 95 that can refill, so no timer starts; 48 is.
+        var state = new LocationState(null, 20, 20, 60);
+
+        var few = RestockRules.Arrive(School, new Visit(22, 155, 79, state), Fixed);
+
+        Assert.False(few.Started);
+        Assert.Null(few.Next.StartDay);
+        Assert.Equal(60, few.Next.Unrefilled);
+
+        var half = RestockRules.Arrive(School, new Visit(22, 155, 108, state), Fixed);
+
+        Assert.True(half.Started);
+    }
+
+    [Fact]
+    public void When_every_container_got_nothing_back_the_timer_never_starts()
+    {
+        // At a 0% chance every container stays opened and empty; arriving again must not restart the cycle.
+        var arrival = RestockRules.Arrive(School, new Visit(30, 155, 155, new LocationState(null, 20, 20, 155)), Fixed);
+
+        Assert.False(arrival.Started);
+        Assert.False(arrival.Restock);
+    }
+
+    [Fact]
+    public void After_a_restock_the_empty_containers_are_kept_and_the_day_only_moves_if_something_came_back()
+    {
+        var before = new LocationState(9, 12, 3, 5);
+
+        Assert.Equal(new LocationState(null, 13, 13, 4), RestockRules.AfterRestock(before, 13, 10, 4));
+        Assert.Equal(new LocationState(null, 13, 3, 14), RestockRules.AfterRestock(before, 13, 0, 14));
+    }
+
+    [Fact]
     public void Restocks_on_the_due_day_and_then_waits_to_be_explored_again()
     {
         var arrival = Arrive(today: 13, containers: 10, opened: 6, start: 9, lastVisit: 12);
@@ -407,16 +444,29 @@ public class StatusTests
     {
         var status = RestockRules.Status(School, 20, 12, 3, new LocationState(null, 18, 18), Fixed);
 
-        Assert.Equal("3 of 12 containers opened, no timer, it starts once 6 are opened, last restocked on day 18", status);
+        Assert.Equal("3 of 12 containers opened, no timer, it starts once 3 more are opened, last restocked on day 18", status);
     }
 
     [Fact]
-    public void An_explored_location_without_a_timer_says_the_next_visit_starts_it()
+    public void An_explored_location_without_a_timer_counts_from_the_last_visit()
     {
-        // Opened enough on this visit; the timer only starts on arrival, so the load list must not ask for more opening.
+        // Opened enough on day 18; the next arrival dates the timer to day 18, so the load list says so.
         var status = RestockRules.Status(School, 20, 32, 23, new LocationState(null, 18, null), Fixed);
 
-        Assert.Equal("23 of 32 containers opened, explored, the timer starts on the next visit, not restocked yet", status);
+        Assert.Equal("23 of 32 containers opened, explored on day 18, restocks on day 22, not restocked yet", status);
+
+        var late = RestockRules.Status(School, 30, 32, 23, new LocationState(null, 18, null), Fixed);
+
+        Assert.Equal("23 of 32 containers opened, explored on day 18, restock was due on day 22 and happens on the next visit, not restocked yet", late);
+    }
+
+    [Fact]
+    public void Containers_left_empty_by_the_last_restock_are_named_and_do_not_count()
+    {
+        // 12 containers, 8 got nothing back last time and stay opened: 4 can refill, and 1 of them is opened.
+        var status = RestockRules.Status(School, 20, 12, 9, new LocationState(null, 18, 18, 8), Fixed);
+
+        Assert.Equal("9 of 12 containers opened (8 of them got nothing back at the last restock), no timer, it starts once 1 more are opened, last restocked on day 18", status);
     }
 
     [Fact]
@@ -524,13 +574,13 @@ public class FixedRefillTests
     [InlineData(22)]
     public void One_time_kinds_never_come_back(int category)
     {
-        Assert.False(FixedRefill.ComesBack(category, 0));
+        Assert.False(FixedRefill.ComesBack(category, 0, 50));
     }
 
     [Fact]
     public void A_story_item_never_comes_back_whatever_its_kind()
     {
-        Assert.False(FixedRefill.ComesBack(1, 1504));
+        Assert.False(FixedRefill.ComesBack(1, 1504, 50));
     }
 
     [Theory]
@@ -539,6 +589,40 @@ public class FixedRefillTests
     [InlineData(23)]
     public void Ordinary_items_come_back(int category)
     {
-        Assert.True(FixedRefill.ComesBack(category, 0));
+        Assert.True(FixedRefill.ComesBack(category, 0, 50));
+    }
+
+    [Fact]
+    public void An_item_with_no_price_never_comes_back()
+    {
+        // The Hospital's old recorder (item 9049): Category 14, no story, price 0. It is one of a kind.
+        Assert.False(FixedRefill.ComesBack(14, 0, 0));
+    }
+
+    [Fact]
+    public void A_container_with_a_loot_group_gets_random_loot_whatever_its_fixed_roll()
+    {
+        var plan = FixedRefill.Plan(7, Shelf, 70, 70, Rolls(0.99));
+
+        Assert.True(plan.Random);
+        Assert.Empty(plan.Fixed);
+    }
+
+    [Fact]
+    public void A_container_with_only_fixed_items_that_misses_gets_nothing()
+    {
+        var plan = FixedRefill.Plan(0, Shelf, 70, 70, Rolls(0.99));
+
+        Assert.False(plan.Random);
+        Assert.Empty(plan.Fixed);
+    }
+
+    [Fact]
+    public void A_container_with_no_fixed_items_rolls_nothing()
+    {
+        var plan = FixedRefill.Plan(7, Array.Empty<ItemStack>(), 70, 70, Rolls());
+
+        Assert.True(plan.Random);
+        Assert.Empty(plan.Fixed);
     }
 }

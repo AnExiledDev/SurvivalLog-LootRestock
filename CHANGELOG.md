@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7
+
+- Fixed: the old recorder in the Abandoned Hospital could come back at a restock. Items with no price, which are one of a kind, never come back now.
+- Fixed: containers that got nothing back at a restock counted toward exploring the location again, so a barely searched Tech Company could restock twice. Only the containers that can refill count now, and a location where nothing refilled never restarts its timer.
+- A container that has both set items and a random loot table gets a round of random loot and its set items by chance.
+- The location list in the log shows the day an explored location's timer counts from and its restock day, and how many containers got nothing back at the last restock.
+- Only the map layout rows the game itself uses for a location are read, so a game update that reuses a furniture number elsewhere cannot give a container the wrong items.
+
 ## 0.1.6
 
 - Fixed: containers the game fills with set items instead of random loot never restocked, so the Tech Company, which has almost only these, never restocked at all. They now get their items back, minus keys, notes, story items and other one-time items.

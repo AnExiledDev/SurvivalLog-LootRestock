@@ -16,8 +16,8 @@ namespace LootRestock.Adapters;
 /// opened container that has a random loot group, with the same loot group, count and discovery level as the game's own
 /// fill. Containers the map layout (Config_GuidanceFurniture) fills with a fixed list of items get that list back by
 /// chance (FixedRefill), less the one-time items. The cycle's state
-/// lives in the save as GameCounter entries per location: the day its timer started, the day of the last visit and the
-/// day of the last restock. A postfix on BattleLogicWorld.StartBattle logs every location's state when a save loads.
+/// lives in the save as GameCounter entries per location: the day its timer started, the day of the last visit, the
+/// day of the last restock and how many opened containers that restock left empty. A postfix on BattleLogicWorld.StartBattle logs every location's state when a save loads.
 /// The hooks fail soft, back to the game's own behavior.
 /// </summary>
 internal static class RestockHooks
@@ -27,6 +27,9 @@ internal static class RestockHooks
     /// <summary>The map ids post-disaster locations use. Besides the known ones, only ids with a saved state are listed.</summary>
     internal const int FirstMapId = 1000;
     internal const int LastMapId = 1099;
+
+    /// <summary>The map layout's ChapterType for rows that load in a post-disaster location (AgentManager.ShouldLoadFurniture).</summary>
+    private const int PostDisasterChapterType = 5;
 
     /// <summary>The game's own discovery waves skip containers with this function, so restocks do too.</summary>
     private const int NoWaveFunc = 1765;
@@ -178,18 +181,26 @@ internal static class RestockHooks
         var containers = Containers(here);
         var opened = containers.Where(c => c.Furniture.HasSearched).ToList();
         var state = Read(here.MapId);
-        var arrival = RestockRules.Arrive(here.MapId, new Visit(here.Today, containers.Count, opened.Count, state), _settings);
-        var count = $"{opened.Count} of {containers.Count} containers opened";
+        var visit = new Visit(here.Today, containers.Count, opened.Count, state);
+        var arrival = RestockRules.Arrive(here.MapId, visit, _settings);
+        var count = RestockRules.Opened(visit);
 
         // One line per arrival, so the log of any session shows where each location's timer stands.
         if (arrival.Started) _log?.LogInfo($"{here.Name} explored on day {here.Today} ({count}), restocks on day {arrival.DueDay}");
         else if (arrival.Restock) _log?.LogInfo($"{here.Name} on day {here.Today}: {count}, restock was due on day {arrival.DueDay}");
         else if (arrival.DueDay is { } due) _log?.LogInfo($"{here.Name} on day {here.Today}: {count}, restocks on day {due}");
-        else _log?.LogInfo($"{here.Name} on day {here.Today}: {count}, the restock timer starts once {RestockRules.NeededToExplore(containers.Count, _settings.ExploredShare)} are opened");
+        else _log?.LogInfo($"{here.Name} on day {here.Today}: {count}, the restock timer starts once {RestockRules.StillToOpen(visit, _settings.ExploredShare)} more are opened");
 
-        if (arrival.Restock) Restock(here, opened);
+        var next = arrival.Next;
 
-        Write(here.MapId, arrival.Next);
+        if (arrival.Restock)
+        {
+            var (refilled, unrefilled) = Restock(here, opened);
+
+            next = RestockRules.AfterRestock(state, here.Today, refilled, unrefilled);
+        }
+
+        Write(here.MapId, next);
     }
 
     // ----- for the test cheats (DevCheats) -----
@@ -212,16 +223,17 @@ internal static class RestockHooks
     }
 
     /// <summary>Restocks the opened containers here now, whatever the timer says, and waits to be explored again as a restock does.</summary>
-    internal static int RestockNow(Here here)
+    internal static (int Opened, int Refilled) RestockNow(Here here)
     {
         var opened = Containers(here).Where(c => c.Furniture.HasSearched).ToList();
 
-        if (opened.Count == 0) return 0;
+        if (opened.Count == 0) return (0, 0);
 
-        Restock(here, opened);
-        Write(here.MapId, new LocationState(null, here.Today, here.Today));
+        var (refilled, unrefilled) = Restock(here, opened);
 
-        return opened.Count;
+        Write(here.MapId, RestockRules.AfterRestock(Read(here.MapId), here.Today, refilled, unrefilled));
+
+        return (opened.Count, refilled);
     }
 
     internal static LocationState Read(int mapId)
@@ -229,6 +241,7 @@ internal static class RestockHooks
         var start = LocationState.Decode(GameCounter.GetCounter(StartKey(mapId)));
         var visit = LocationState.Decode(GameCounter.GetCounter(VisitKey(mapId)));
         var restocked = LocationState.Decode(GameCounter.GetCounter(RestockedKey(mapId)));
+        var unrefilled = Math.Max(0, GameCounter.GetCounter(UnrefilledKey(mapId)));
 
         // A save from 0.1.2 or earlier holds the due day instead of the start day.
         if (start == null && LocationState.Decode(GameCounter.GetCounter(OldDueKey(mapId))) is { } oldDue)
@@ -236,7 +249,7 @@ internal static class RestockHooks
             start = RestockRules.StartOfOldTimer(mapId, oldDue, visit, _settings);
         }
 
-        return new LocationState(start, visit, restocked);
+        return new LocationState(start, visit, restocked, unrefilled);
     }
 
     internal static void Write(int mapId, LocationState state)
@@ -244,34 +257,39 @@ internal static class RestockHooks
         GameCounter.SetCounter(StartKey(mapId), LocationState.Encode(state.StartDay));
         GameCounter.SetCounter(VisitKey(mapId), LocationState.Encode(state.LastVisitDay));
         GameCounter.SetCounter(RestockedKey(mapId), LocationState.Encode(state.LastRestockDay));
+        GameCounter.SetCounter(UnrefilledKey(mapId), state.Unrefilled);
 
         if (GameCounter.GetCounter(OldDueKey(mapId)) != 0) GameCounter.SetCounter(OldDueKey(mapId), 0);
     }
 
     internal static string NameOf(int mapId) => Locations.Known.FirstOrDefault(l => l.MapId == mapId)?.English ?? $"location {mapId}";
 
-    private static void Restock(Here here, List<Container> opened)
+    /// <summary>Refills the opened containers. Returns how many got something and how many stay opened because they got nothing.</summary>
+    private static (int Refilled, int Unrefilled) Restock(Here here, List<Container> opened)
     {
         var discoverLv = ExploreDiscoveryTools.GetDiscoveryLv(here.MapId);
-        int random = 0, withFixed = 0, fixedNone = 0;
+        int random = 0, withFixed = 0, fixedNone = 0, refilled = 0;
 
         foreach (var container in opened)
         {
+            var plan = FixedRefill.Plan(container.Group, container.Fixed, _settings.FixedContainerPercent, _settings.FixedItemPercent, Dice.NextDouble);
             var added = false;
 
-            if (container.Group > 0)
+            if (plan.Random)
             {
                 FurnitureLootTools.FillRandomLoot(container.Furniture, container.Group, container.Count, false, null, discoverLv, 0);
+
+                // Marked unopened right away, so an error further on cannot make the next arrival fill it a second time.
+                container.Furniture.HasSearched = false;
                 added = true;
                 random++;
             }
 
             if (container.Fixed.Count > 0)
             {
-                var back = FixedRefill.Roll(container.Fixed, _settings.FixedContainerPercent, _settings.FixedItemPercent, Dice.NextDouble);
-
-                if (AddFixed(here, container.Furniture, back) > 0)
+                if (AddFixed(here, container.Furniture, plan.Fixed) > 0)
                 {
+                    container.Furniture.HasSearched = false;
                     added = true;
                     withFixed++;
                 }
@@ -282,10 +300,12 @@ internal static class RestockHooks
             }
 
             // A container that got nothing back stays opened, so it does not look full when it is empty.
-            if (added) container.Furniture.HasSearched = false;
+            if (added) refilled++;
         }
 
         _log?.LogInfo($"{here.Name} restocked on day {here.Today}: {opened.Count} opened containers, {random} got random loot, {withFixed} got fixed items back, {fixedNone} with fixed items got none this time");
+
+        return (refilled, opened.Count - refilled);
     }
 
     /// <summary>
@@ -371,6 +391,8 @@ internal static class RestockHooks
 
     private static string RestockedKey(int mapId) => $"lootrestock.restocked.{mapId}";
 
+    private static string UnrefilledKey(int mapId) => $"lootrestock.unrefilled.{mapId}";
+
     private static void Report(string operation, Exception ex)
     {
         if (Reported.Add(operation)) _log?.LogError($"{operation} failed, the location keeps the game's own loot (each kind reported once): {ex}");
@@ -384,9 +406,10 @@ internal static class RestockHooks
     private sealed record Kind(int Group, int Count, List<ItemStack> Fixed);
 
     /// <summary>
-    /// A location's map layout, which says what each container is filled with. The layout is per chapter (each
-    /// post-disaster location is one), keyed by the furniture's config id, with one list for everyone and one per
-    /// character (ItemIdList_P1 to _P4), as AgentManager.LoadFurnitureFromGuidance reads them.
+    /// A location's map layout, which says what each container is filled with, keyed by the furniture's config id, with
+    /// one list for everyone and one per character (ItemIdList_P1 to _P4). GetGuidanceFurnitureByChapterId returns every
+    /// row whatever the chapter, so the rows are picked as AgentManager.LoadFurnitureFromGuidance picks them for a
+    /// post-disaster location: ChapterType 5, a map point in this chapter (or none), and everyone's or this character's.
     /// </summary>
     private sealed class Layout
     {
@@ -404,7 +427,9 @@ internal static class RestockHooks
 
             foreach (var entry in entries)
             {
-                if (entry == null || (entry.PlayerSelectId != 0 && entry.PlayerSelectId != here.Character)) continue;
+                if (entry == null || entry.ChapterType != PostDisasterChapterType) continue;
+                if (here.Character > 0 && entry.PlayerSelectId > 0 && entry.PlayerSelectId != here.Character) continue;
+                if (entry.MapPointID > 0 && here.Configs.Get_Config_MapPoint(entry.MapPointID)?.ChapterID != chapter) continue;
 
                 _entries.TryAdd(entry.FurnitureId, entry);
             }
@@ -447,7 +472,7 @@ internal static class RestockHooks
             for (var i = 0; i < ids.Count; i++)
             {
                 if (counts[i] <= 0 || _here.Configs.Get_Config_Item(ids[i]) is not { } item) continue;
-                if (FixedRefill.ComesBack(item.Category, item.Story)) items.Add(new ItemStack(ids[i], counts[i]));
+                if (FixedRefill.ComesBack(item.Category, item.Story, item.price)) items.Add(new ItemStack(ids[i], counts[i]));
             }
         }
     }

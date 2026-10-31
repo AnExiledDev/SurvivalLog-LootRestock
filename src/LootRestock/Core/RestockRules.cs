@@ -90,7 +90,8 @@ public readonly record struct ItemStack(int ItemId, int Count);
 /// Containers the game fills with a fixed list of items (from its own map layout) rather than random loot. At a
 /// restock, each opened one gets its list back by chance: first the container rolls whether it gets anything, then
 /// each single item rolls whether it comes back, so a refill is often smaller than the first fill.
-/// One-time things never come back: story items, keys, notes, keepsakes, records, wallpaper and vehicle parts.
+/// One-time things never come back: story items, keys, notes, keepsakes, records, wallpaper, vehicle parts, and items
+/// with no price, which are one-of-a-kind finds such as the Hospital's old recorder.
 /// </summary>
 public static class FixedRefill
 {
@@ -103,8 +104,8 @@ public static class FixedRefill
     /// </summary>
     public static readonly IReadOnlyCollection<int> OneTimeCategories = new HashSet<int> { 17, 18, 19, 20, 21, 22 };
 
-    /// <summary>Whether an item may come back at a restock: not tied to a story and not a one-time kind.</summary>
-    public static bool ComesBack(int category, int story) => story == 0 && !OneTimeCategories.Contains(category);
+    /// <summary>Whether an item may come back at a restock: not tied to a story, not a one-time kind, and with a price.</summary>
+    public static bool ComesBack(int category, int story, int price) => story == 0 && price > 0 && !OneTimeCategories.Contains(category);
 
     /// <summary>A percent below 0 or above 100 is held to that range.</summary>
     public static int CleanPercent(int percent) => Math.Clamp(percent, 0, 100);
@@ -133,14 +134,24 @@ public static class FixedRefill
 
         return back;
     }
+
+    /// <summary>
+    /// What one opened container gets at a restock: random loot when it has a loot group, and its fixed items by chance.
+    /// </summary>
+    public static Refill Plan(int group, IReadOnlyList<ItemStack> items, int containerPercent, int itemPercent, Func<double> next) =>
+        new(group > 0, items.Count > 0 ? Roll(items, containerPercent, itemPercent, next) : new List<ItemStack>());
 }
+
+/// <summary>What one container gets at a restock: whether it gets random loot, and which fixed items come back.</summary>
+public readonly record struct Refill(bool Random, List<ItemStack> Fixed);
 
 /// <summary>
 /// What the mod remembers about one location, in the save. StartDay is the day its timer started, null while it waits
 /// to be explored. The due day is worked out from it on each arrival, so a changed day range applies to a running timer.
-/// LastRestockDay is the day the mod last added loot there.
+/// LastRestockDay is the day the mod last added loot there. Unrefilled is how many opened containers the last restock
+/// left empty: they stay opened, so they must not count toward exploring the location again.
 /// </summary>
-public readonly record struct LocationState(int? StartDay, int? LastVisitDay, int? LastRestockDay = null)
+public readonly record struct LocationState(int? StartDay, int? LastVisitDay, int? LastRestockDay = null, int Unrefilled = 0)
 {
     /// <summary>The save holds whole numbers where 0 means unset, and day 0 is a real day, so each day is stored plus one.</summary>
     public static int Encode(int? day) => day is { } d && d >= 0 ? d + 1 : 0;
@@ -149,7 +160,14 @@ public readonly record struct LocationState(int? StartDay, int? LastVisitDay, in
 }
 
 /// <summary>What one visit to a location found: the day, and how many of its containers there are and have been opened.</summary>
-public readonly record struct Visit(int Today, int Containers, int Opened, LocationState State);
+public readonly record struct Visit(int Today, int Containers, int Opened, LocationState State)
+{
+    /// <summary>The containers that count toward exploring: all of them less the ones the last restock left empty.</summary>
+    public int Refillable => Math.Max(0, Containers - State.Unrefilled);
+
+    /// <summary>The opened containers that count toward exploring, less the ones the last restock left empty.</summary>
+    public int Explored => Math.Max(0, Opened - State.Unrefilled);
+}
 
 /// <summary>
 /// The result of arriving at a location. Restock means: add a wave of loot to every container opened since the last
@@ -190,7 +208,7 @@ public static class RestockRules
         var start = visit.State.StartDay;
         var started = false;
 
-        if (start == null && IsExplored(visit.Containers, visit.Opened, settings.ExploredShare))
+        if (start == null && IsExplored(visit.Refillable, visit.Explored, settings.ExploredShare))
         {
             // The opening happened on the last visit; with no visit on record (the mod was just added), it counts as today.
             start = Math.Min(visit.State.LastVisitDay ?? visit.Today, visit.Today);
@@ -206,21 +224,44 @@ public static class RestockRules
     }
 
     /// <summary>
+    /// The state after a restock that refilled <paramref name="refilled"/> containers and left <paramref name="unrefilled"/>
+    /// opened ones empty. A restock that added nothing keeps the earlier last-restock day.
+    /// </summary>
+    public static LocationState AfterRestock(LocationState before, int today, int refilled, int unrefilled) =>
+        new(null, today, refilled > 0 ? today : before.LastRestockDay, unrefilled);
+
+    /// <summary>How many containers are opened, for the log, with the ones the last restock left empty.</summary>
+    public static string Opened(Visit visit)
+    {
+        var line = $"{visit.Opened} of {visit.Containers} containers opened";
+
+        return visit.State.Unrefilled > 0 ? $"{line} ({visit.State.Unrefilled} of them got nothing back at the last restock)" : line;
+    }
+
+    /// <summary>How many more containers must be opened before the location counts as explored again.</summary>
+    public static int StillToOpen(Visit visit, double share) =>
+        Math.Max(0, NeededToExplore(visit.Refillable, share) - visit.Explored);
+
+    /// <summary>
     /// Where one location's cycle stands, in one line for the log: how much is opened, the timer, and the last restock.
     /// Nothing here changes the location.
     /// </summary>
     public static string Status(int mapId, int today, int containers, int opened, LocationState state, RestockSettings settings)
     {
-        var timer = state.StartDay is { } start
-            ? DueDay(mapId, start, settings) is var due && today >= due
-                ? $"timer started on day {start}, restock was due on day {due} and happens on the next visit"
-                : $"timer started on day {start}, restocks on day {due}"
-            : IsExplored(containers, opened, settings.ExploredShare)
-                ? "explored, the timer starts on the next visit"
-                : $"no timer, it starts once {NeededToExplore(containers, settings.ExploredShare)} are opened";
+        var visit = new Visit(today, containers, opened, state);
+        var explored = IsExplored(visit.Refillable, visit.Explored, settings.ExploredShare);
+
+        // An explored location's timer is dated to the last visit as soon as the player arrives again.
+        var start = state.StartDay ?? (explored ? Math.Min(state.LastVisitDay ?? today, today) : null);
+        var since = state.StartDay != null ? $"timer started on day {start}" : $"explored on day {start}";
+        var timer = start is { } s
+            ? DueDay(mapId, s, settings) is var due && today >= due
+                ? $"{since}, restock was due on day {due} and happens on the next visit"
+                : $"{since}, restocks on day {due}"
+            : $"no timer, it starts once {StillToOpen(visit, settings.ExploredShare)} more are opened";
         var restocked = state.LastRestockDay is { } day ? $"last restocked on day {day}" : "not restocked yet";
 
-        return $"{opened} of {containers} containers opened, {timer}, {restocked}";
+        return $"{Opened(visit)}, {timer}, {restocked}";
     }
 
     /// <summary>

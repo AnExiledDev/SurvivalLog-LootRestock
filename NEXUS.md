@@ -13,11 +13,11 @@ Each location in Survival Log is stocked once, and survival point cards add to i
 [*][b]You pick how often[/b]: each location has its own range of days in the config, so restocks come as fast or as slow as you want. Set a range such as 3-5, or one number such as 2.[/*]
 [*][b]No piling up[/b]: after a restock, a location waits until you explore it again. A place you skip or barely search never restocks twice.[/*]
 [*][b]Same loot as the game[/b]: a restock uses the game's own loot table for that container and your character, at the location's current discovery level.[/*]
-[*][b]Set items come back by chance[/b]: containers the game fills with the same items every time (most of the Tech Company) get them back, but only some containers, and only some of their items. Both chances are in the config. Keys, notes, story items and other one-time items never come back.[/*]
+[*][b]Set items come back by chance[/b]: containers the game fills with the same items every time (most of the Tech Company) get them back, but only some containers, and only some of their items. Both chances are in the config. A container that has both set items and a random loot table gets a round of random loot and its set items by chance. Keys, notes, story items and other one-time items never come back. A container that gets nothing back stays searched, and it does not count when you explore the location again.[/*]
 [/list]
 Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the post-disaster exploration locations restock; your home, camps and pre-disaster locations are not affected.
 
-Loot Restock keeps a few numbers in your save (each location's restock day). It does not edit game files. You can remove it at any time; loot it already added stays.
+Loot Restock keeps a few numbers in your save (for each location: when its timer started, your last visit, its last restock, and how many containers that restock left empty). It does not edit game files. You can remove it at any time; loot it already added stays.
 
 Works in English and Chinese.
 
@@ -68,11 +68,11 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-LootResto
 [*][b]补货快慢由你决定[/b]：每个地点在配置里都有自己的天数范围，想多快或多慢补货都可以。可以写一个范围，比如 3-5，也可以写一个数字，比如 2。[/*]
 [*][b]不会越堆越多[/b]：补货之后，地点要等你再次探索才会再补。你不去或只搜了一点的地方，不会补第二次。[/*]
 [*][b]和游戏一样的物资[/b]：补货使用游戏自己为这个柜子和你的角色准备的物资表，按这个地点当前的发现等级刷新。[/*]
-[*][b]固定物品按几率补回[/b]：游戏每次都放同样物品的柜子（科技公司大多如此）也会补回，但只有部分柜子、部分物品会回来，两个几率都可以在配置里改。钥匙、笔记、剧情物品等一次性物品不会回来。[/*]
+[*][b]固定物品按几率补回[/b]：游戏每次都放同样物品的柜子（科技公司大多如此）也会补回，但只有部分柜子、部分物品会回来，两个几率都可以在配置里改。既有固定物品又有随机物资表的柜子，会补一轮随机物资，固定物品按几率补回。钥匙、笔记、剧情物品等一次性物品不会回来。什么都没补回的柜子仍算已搜索，再次探索这个地点时不算在内。[/*]
 [/list]
 补货在你到达地点或在地点里换楼层时发生，不是在夜里。补过货的柜子会重新显示为未搜索。只有灾后探索地点会补货；家、营地和灾前地点不受影响。
 
-Loot Restock 会在存档里记下几个数字（每个地点的补货日）。不会修改游戏文件，随时可以移除；已经补进去的物资会留下。
+Loot Restock 会在存档里记下几个数字（每个地点的计时开始日、你上次到访、上次补货，以及那次补货有几个柜子没补回东西）。不会修改游戏文件，随时可以移除；已经补进去的物资会留下。
 
 支持英文和中文。
 

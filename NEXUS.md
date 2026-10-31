@@ -2,6 +2,8 @@ Name: Loot Restock
 Summary: Exploration locations restock the containers you opened, a few days after you explored them, with the same loot the game uses. Each location has its own timer, from 3-5 days for the Gas Station to 6-9 for the Tech Company. A place restocks once per exploration, so loot never piles up where you don't go. Every range is in the config.
 
 Description (BBCode):
+[center][img]https://sldb.core-directive.com/media/save/2-changes-stay.png[/img][/center]
+
 Each location in Survival Log is stocked once, and survival point cards add to it later. Once you have searched a place, it stays empty. Loot Restock brings fresh loot back to the places you keep exploring.
 
 [size=5]Main features[/size]
@@ -26,7 +28,7 @@ A location you had already half searched before installing the mod starts its ti
 
 [size=5]Requirements[/size]
 [list]
-[*]Survival Log 1.1.19611. A game update can break it until the mod is updated.[/*]
+[*]Survival Log 1.1.20151. A game update can break it until the mod is updated.[/*]
 [*][url=https://www.nexusmods.com/survivallog/mods/12]BepInEx for Survival Log[/url]. Install it first.[/*]
 [*]Optional: [url=https://www.nexusmods.com/survivallog/mods/61]Exiled's Toolkit[/url] 0.4.0 or newer. With it, settings changed on the Mod Manager's Mods screen take effect without restarting the game. Without it, they take effect at the next game start.[/*]
 [/list]
@@ -79,7 +81,7 @@ Loot Restock 会在存档里记下几个数字（每个地点的补货日）。�
 
 [size=5]前置要求[/size]
 [list]
-[*]Survival Log 1.1.19611。游戏更新后模组可能暂时失效，直到模组更新为止。[/*]
+[*]Survival Log 1.1.20151。游戏更新后模组可能暂时失效，直到模组更新为止。[/*]
 [*][url=https://www.nexusmods.com/survivallog/mods/12]BepInEx for Survival Log[/url]，请先安装。[/*]
 [*]可选：[url=https://www.nexusmods.com/survivallog/mods/61]Exiled's Toolkit[/url] 0.4.0 或更新版本。装了它，在 Mod Manager 的「模组」界面改动的设置无需重启游戏即可生效；没装的话，改动在下次启动游戏时生效。[/*]
 [/list]

@@ -19,7 +19,7 @@ Loot Restock keeps a few numbers in your save (each location's restock day). It 
 
 ## Requirements
 
-- Survival Log 1.1.19611. Built for this version; a game update can break it until the mod is updated.
+- Survival Log 1.1.20151. Built for this version; a game update can break it until the mod is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 - Optional: [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.4.0 or newer. With it, settings changed on the Mod Manager's Mods screen take effect without restarting the game. Without it, they take effect at the next game start.
 
@@ -27,7 +27,7 @@ Loot Restock keeps a few numbers in your save (each location's restock day). It 
 
 1. Install the [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12) (if no other mods were installed before, start the game once so BepInEx finishes setup, then quit).
 2. Optional, to change settings without a restart: install Exiled's Toolkit. Download `ExiledToolkit-x.y.z.zip` from [its latest release](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit/releases/latest) or from [Nexus Mods](https://www.nexusmods.com/survivallog/mods/61), and extract it into the game folder (the folder with `SurvivalLog.exe`).
-3. Download `LootRestock-x.y.z.zip` from the [latest release](https://github.com/AnExiledDev/SurvivalLog-LootRestock/releases/latest) or from [Nexus Mods](https://www.nexusmods.com/survivallog/mods/91).
+3. Download `LootRestock-x.y.z.zip` from the [latest release](https://github.com/AnExiledDev/SurvivalLog-LootRestock/releases/latest).
 4. Extract the zip into the game folder (the folder with `SurvivalLog.exe`). It holds a `BepInEx` folder, so the DLL lands in the right place. When asked, merge the folders. The result should be:
    `C:\Program Files (x86)\Steam\steamapps\common\Survival Log\BepInEx\plugins\LootRestock.dll`
 
@@ -43,7 +43,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.0 started`, followed by `hooked the location loot refresh`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. Each time a location is explored or restocked, the log says so, with the day.
+Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.1 started`, followed by `hooked the location loot refresh`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. Each time a location is explored or restocked, the log says so, with the day.
 
 ## Known issues
 

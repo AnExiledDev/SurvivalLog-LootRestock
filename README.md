@@ -43,7 +43,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.1 started`, followed by `hooked the location loot refresh`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. Each time a location is explored or restocked, the log says so, with the day.
+Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.2 started`, followed by `hooked the location loot refresh`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. Each time a location is explored or restocked, the log says so, with the day.
 
 ## Known issues
 

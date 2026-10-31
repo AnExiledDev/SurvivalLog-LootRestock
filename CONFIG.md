@@ -16,7 +16,6 @@ Each setting is the number of days after you explore a location until its contai
 | Setting | Default | Location |
 | --- | --- | --- |
 | `HardwareStore` | `3-5` | Hardware Store |
-| `GasStation` | `3-5` | Gas Station |
 | `DesertedSupermarket` | `4-7` | Deserted Supermarket |
 | `AbandonedSchool` | `5-8` | Abandoned School |
 | `AbandonedHospital` | `5-8` | Abandoned Hospital |

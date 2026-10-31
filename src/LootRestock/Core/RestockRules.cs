@@ -38,11 +38,10 @@ public sealed record Location(int MapId, string Key, string English, string Chin
 
 public static class Locations
 {
-    /// <summary>The six post-disaster exploration locations, smallest first.</summary>
+    /// <summary>The post-disaster exploration locations a player can reach, smallest first.</summary>
     public static readonly IReadOnlyList<Location> Known = new[]
     {
         new Location(1000, "HardwareStore", "Hardware Store", "社区检修小屋", new DayRange(3, 5)),
-        new Location(1001, "GasStation", "Gas Station", "加油站", new DayRange(3, 5)),
         new Location(1004, "DesertedSupermarket", "Deserted Supermarket", "残破超市", new DayRange(4, 7)),
         new Location(1002, "AbandonedSchool", "Abandoned School", "废弃学校", new DayRange(5, 8)),
         new Location(1005, "AbandonedHospital", "Abandoned Hospital", "废弃医院", new DayRange(5, 8)),

@@ -248,6 +248,13 @@ public class ArriveTests
             Assert.Equal(location.Default, parsed);
         }
 
-        Assert.Equal(6, Locations.Known.Select(l => l.MapId).Distinct().Count());
+        Assert.Equal(5, Locations.Known.Select(l => l.MapId).Distinct().Count());
+    }
+
+    [Fact]
+    public void No_setting_for_a_location_the_player_cannot_reach()
+    {
+        // Map 1001 is in the game's data but has no playable map; a setting for it would do nothing.
+        Assert.DoesNotContain(Locations.Known, l => l.MapId == 1001);
     }
 }

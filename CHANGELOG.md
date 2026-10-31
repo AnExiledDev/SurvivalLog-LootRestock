@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Fixed: changing a location's days did nothing until its next restock. The new number of days now applies to a timer that is already counting.
+- Each time you arrive at a post-disaster location, `BepInEx\LogOutput.log` says how many of its containers are opened and on which day it restocks.
+
 ## 0.1.2
 
 - The Days settings list only the locations you can visit.

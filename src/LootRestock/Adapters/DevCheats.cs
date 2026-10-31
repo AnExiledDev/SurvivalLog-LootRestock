@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using LootRestock.Core;
 
@@ -22,10 +23,10 @@ public static class DevCheats
         var (containers, opened) = RestockHooks.Count(here!);
         var state = RestockHooks.Read(here!.MapId);
         var explored = RestockRules.IsExplored(containers, opened, RestockHooks.Settings.ExploredShare);
-        var due = state.DueDay is { } d ? $"day {d}" : "not set";
+        var timer = state.StartDay is { } s ? $"timer started on day {s}, restocks on day {RestockRules.DueDay(here.MapId, s, RestockHooks.Settings)}" : "no timer running";
         var visit = state.LastVisitDay is { } v ? $"day {v}" : "none";
 
-        return $"{here.Name}, today is day {here.Today}: {opened} of {containers} containers opened, {(explored ? "explored" : "not explored")}. Restock {due}, last visit {visit}.";
+        return $"{here.Name}, today is day {here.Today}: {opened} of {containers} containers opened, {(explored ? "explored" : "not explored")}. {timer}, last visit {visit}.";
     }
 
     [DisplayName("Restock here now\n立即在这里补货")]
@@ -40,20 +41,24 @@ public static class DevCheats
     }
 
     [DisplayName("Restock due today\n今天到补货日")]
-    [Description("Sets this location's restock day to today. Leave and come back to test a real restock.\n把这个地点的补货日设为今天。离开再回来，就能测试真正的补货。")]
+    [Description("Makes this location's restock due by today. Leave and come back to test a real restock.\n让这个地点的补货日在今天或之前到期。离开再回来，就能测试真正的补货。")]
     public static string DueToday()
     {
         if (Where(out var here) is { } problem) return problem;
 
         var state = RestockHooks.Read(here!.MapId);
 
-        RestockHooks.Write(here.MapId, state with { DueDay = here.Today });
+        // A timer started the longest range ago has run out by today, whatever it rolled. The save holds no day before 0.
+        var start = Math.Max(0, here.Today - RestockHooks.Settings.RangeFor(here.MapId).Max);
+        var due = RestockRules.DueDay(here.MapId, start, RestockHooks.Settings);
 
-        return $"{here.Name}: restock due today (day {here.Today}). Leave and come back to restock.";
+        RestockHooks.Write(here.MapId, state with { StartDay = start });
+
+        return $"{here.Name}: restock due on day {due}, today is day {here.Today}. Leave and come back to restock.";
     }
 
     [DisplayName("Reset all timers\n重置所有倒计时")]
-    [Description("Clears the restock day and last visit of every location, as if the mod were just added.\n清除所有地点的补货日和上次到访记录，就像刚装上这个模组一样。")]
+    [Description("Clears the restock timer and last visit of every location, as if the mod were just added.\n清除所有地点的补货倒计时和上次到访记录，就像刚装上这个模组一样。")]
     public static string ResetAllTimers()
     {
         if (!RestockHooks.InGame) return "load a save first";

@@ -14,7 +14,7 @@ namespace LootRestock.Adapters;
 /// you arrive somewhere (it also adds a wave per survival point card). A postfix on it runs the restock cycle for
 /// post-disaster exploration locations (Config_MapPoint.PointCategory 2). A restock is one more FillRandomLoot per
 /// opened container, with the same loot group, count and discovery level as the game's own fill. The cycle's state
-/// lives in the save as two GameCounter entries per location. The hook fails soft, back to the game's own behavior.
+/// lives in the save as two GameCounter entries per location, the day its timer started and the day of the last visit. The hook fails soft, back to the game's own behavior.
 /// </summary>
 internal static class RestockHooks
 {
@@ -69,8 +69,14 @@ internal static class RestockHooks
         var opened = containers.Where(c => c.Furniture.HasSearched).ToList();
         var state = Read(here.MapId);
         var arrival = RestockRules.Arrive(here.MapId, new Visit(here.Today, containers.Count, opened.Count, state), _settings);
+        var count = $"{opened.Count} of {containers.Count} containers opened";
 
-        if (arrival.DueDay is { } due) _log?.LogInfo($"{here.Name} explored ({opened.Count} of {containers.Count} containers opened), restocks on day {due}");
+        // One line per arrival, so the log of any session shows where each location's timer stands.
+        if (arrival.Started) _log?.LogInfo($"{here.Name} explored on day {here.Today} ({count}), restocks on day {arrival.DueDay}");
+        else if (arrival.Restock) _log?.LogInfo($"{here.Name} on day {here.Today}: {count}, restock was due on day {arrival.DueDay}");
+        else if (arrival.DueDay is { } due) _log?.LogInfo($"{here.Name} on day {here.Today}: {count}, restocks on day {due}");
+        else _log?.LogInfo($"{here.Name} on day {here.Today}: {count}, the restock timer starts once {RestockRules.NeededToExplore(containers.Count, _settings.ExploredShare)} are opened");
+
         if (arrival.Restock) Restock(here, opened);
 
         Write(here.MapId, arrival.Next);
@@ -108,13 +114,26 @@ internal static class RestockHooks
         return opened.Count;
     }
 
-    internal static LocationState Read(int mapId) =>
-        new(LocationState.Decode(GameCounter.GetCounter(DueKey(mapId))), LocationState.Decode(GameCounter.GetCounter(VisitKey(mapId))));
+    internal static LocationState Read(int mapId)
+    {
+        var start = LocationState.Decode(GameCounter.GetCounter(StartKey(mapId)));
+        var visit = LocationState.Decode(GameCounter.GetCounter(VisitKey(mapId)));
+
+        // A save from 0.1.2 or earlier holds the due day instead of the start day.
+        if (start == null && LocationState.Decode(GameCounter.GetCounter(OldDueKey(mapId))) is { } oldDue)
+        {
+            start = RestockRules.StartOfOldTimer(mapId, oldDue, visit, _settings);
+        }
+
+        return new LocationState(start, visit);
+    }
 
     internal static void Write(int mapId, LocationState state)
     {
-        GameCounter.SetCounter(DueKey(mapId), LocationState.Encode(state.DueDay));
+        GameCounter.SetCounter(StartKey(mapId), LocationState.Encode(state.StartDay));
         GameCounter.SetCounter(VisitKey(mapId), LocationState.Encode(state.LastVisitDay));
+
+        if (GameCounter.GetCounter(OldDueKey(mapId)) != 0) GameCounter.SetCounter(OldDueKey(mapId), 0);
     }
 
     internal static string NameOf(int mapId) => Locations.Known.FirstOrDefault(l => l.MapId == mapId)?.English ?? $"location {mapId}";
@@ -173,7 +192,9 @@ internal static class RestockHooks
         return found;
     }
 
-    private static string DueKey(int mapId) => $"lootrestock.due.{mapId}";
+    private static string StartKey(int mapId) => $"lootrestock.start.{mapId}";
+
+    private static string OldDueKey(int mapId) => $"lootrestock.due.{mapId}";
 
     private static string VisitKey(int mapId) => $"lootrestock.visit.{mapId}";
 

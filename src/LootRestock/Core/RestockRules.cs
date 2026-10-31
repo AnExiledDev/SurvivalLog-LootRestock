@@ -62,8 +62,11 @@ public sealed record RestockSettings(bool Enabled, double ExploredShare, IReadOn
     public static double CleanShare(double share) => double.IsNaN(share) || share < 0.05 || share > 1 ? DefaultShare : share;
 }
 
-/// <summary>What the mod remembers about one location, in the save. Null means not set.</summary>
-public readonly record struct LocationState(int? DueDay, int? LastVisitDay)
+/// <summary>
+/// What the mod remembers about one location, in the save. StartDay is the day its timer started, null while it waits
+/// to be explored. The due day is worked out from it on each arrival, so a changed day range applies to a running timer.
+/// </summary>
+public readonly record struct LocationState(int? StartDay, int? LastVisitDay)
 {
     /// <summary>The save holds whole numbers where 0 means unset, and day 0 is a real day, so each day is stored plus one.</summary>
     public static int Encode(int? day) => day is { } d && d >= 0 ? d + 1 : 0;
@@ -76,20 +79,28 @@ public readonly record struct Visit(int Today, int Containers, int Opened, Locat
 
 /// <summary>
 /// The result of arriving at a location. Restock means: add a wave of loot to every container opened since the last
-/// restock, then mark those containers unopened again. TimerStartDay and DueDay are set when this visit started the timer.
+/// restock, then mark those containers unopened again. Started is true when this visit started the timer. DueDay is the
+/// day the running timer runs out, null while the location waits to be explored.
 /// </summary>
-public readonly record struct Arrival(bool Restock, LocationState Next, int? TimerStartDay, int? DueDay);
+public readonly record struct Arrival(bool Restock, LocationState Next, bool Started, int? DueDay);
 
 /// <summary>
 /// The restock cycle of one location. The game's own first fill counts as stocked. Once half the containers (the
-/// explored share) have been opened, the location's timer starts, dated to the visit where that happened. When the
-/// timer runs out, the next arrival restocks the opened containers and marks them unopened, and the location waits to
+/// explored share) have been opened, the location's timer starts, dated to the visit where that happened. The timer
+/// runs for a number of days rolled from the location's day range as set at each arrival. When the timer runs out, the next arrival restocks the opened containers and marks them unopened, and the location waits to
 /// be explored again. A location nobody explores never restocks twice, so the mod's loot cannot pile up there.
 /// </summary>
 public static class RestockRules
 {
     public static bool IsExplored(int containers, int opened, double share) =>
-        containers > 0 && opened > 0 && opened >= Math.Ceiling(RestockSettings.CleanShare(share) * containers - 1e-9);
+        containers > 0 && opened >= NeededToExplore(containers, share);
+
+    /// <summary>How many of the containers must be opened for the location to count as explored, at least one.</summary>
+    public static int NeededToExplore(int containers, double share) =>
+        Math.Max(1, (int)Math.Ceiling(RestockSettings.CleanShare(share) * containers - 1e-9));
+
+    /// <summary>The day a timer started on <paramref name="startDay"/> runs out, with the location's day range as set now.</summary>
+    public static int DueDay(int mapId, int startDay, RestockSettings settings) => startDay + Roll(mapId, startDay, settings.RangeFor(mapId));
 
     /// <summary>Days until the restock, the same for the same location and timer start so a reload does not reroll it.</summary>
     public static int Roll(int mapId, int startDay, DayRange range)
@@ -101,21 +112,41 @@ public static class RestockRules
 
     public static Arrival Arrive(int mapId, Visit visit, RestockSettings settings)
     {
-        var due = visit.State.DueDay;
-        int? started = null;
+        var start = visit.State.StartDay;
+        var started = false;
 
-        if (due == null && IsExplored(visit.Containers, visit.Opened, settings.ExploredShare))
+        if (start == null && IsExplored(visit.Containers, visit.Opened, settings.ExploredShare))
         {
             // The opening happened on the last visit; with no visit on record (the mod was just added), it counts as today.
-            var start = Math.Min(visit.State.LastVisitDay ?? visit.Today, visit.Today);
-
-            started = start;
-            due = start + Roll(mapId, start, settings.RangeFor(mapId));
+            start = Math.Min(visit.State.LastVisitDay ?? visit.Today, visit.Today);
+            started = true;
         }
 
+        int? due = start is { } s ? DueDay(mapId, s, settings) : null;
         var restock = due is { } d && visit.Today >= d && visit.Opened > 0;
 
-        return new Arrival(restock, new LocationState(restock ? null : due, visit.Today), started, started == null ? null : due);
+        return new Arrival(restock, new LocationState(restock ? null : start, visit.Today), started, due);
+    }
+
+    /// <summary>
+    /// The start day for a timer saved by version 0.1.2 or earlier, which kept only its due day. The start day that
+    /// rolls that same due day with today's range is used, so an unchanged setting keeps its day. When the range has
+    /// changed, the timer counts from the last visit, never later than the old due day allows, and never before day 0.
+    /// </summary>
+    public static int StartOfOldTimer(int mapId, int oldDueDay, int? lastVisitDay, RestockSettings settings)
+    {
+        var range = settings.RangeFor(mapId);
+        var latest = Math.Min(lastVisitDay ?? int.MaxValue, oldDueDay - range.Min);
+
+        var earliest = Math.Max(0, oldDueDay - range.Max);
+
+        for (var start = latest; start >= earliest; start--)
+        {
+            if (start + Roll(mapId, start, range) == oldDueDay) return start;
+        }
+
+        // The save cannot hold a day before day 0.
+        return Math.Max(0, Math.Min(lastVisitDay ?? int.MaxValue, oldDueDay - range.Max));
     }
 
     // splitmix64 finalizer: spreads neighbouring locations and days apart.

@@ -22,4 +22,4 @@ Each setting is the number of days after you explore a location until its contai
 | `TechCompany` | `6-9` | Tech Company |
 | `OtherLocations` | `5-8` | Any exploration location not listed above, such as one a game update adds |
 
-A change takes effect the next time a location's timer starts. A timer that is already counting keeps its day.
+A change also applies to a location whose timer is already counting.

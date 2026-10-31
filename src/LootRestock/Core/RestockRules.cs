@@ -38,7 +38,7 @@ public sealed record Location(int MapId, string Key, string English, string Chin
 
 public static class Locations
 {
-    /// <summary>The six post-disaster exploration locations of game 1.1.19611, smallest first.</summary>
+    /// <summary>The six post-disaster exploration locations, smallest first.</summary>
     public static readonly IReadOnlyList<Location> Known = new[]
     {
         new Location(1000, "HardwareStore", "Hardware Store", "社区检修小屋", new DayRange(3, 5)),
@@ -90,7 +90,7 @@ public readonly record struct Arrival(bool Restock, LocationState Next, int? Tim
 public static class RestockRules
 {
     public static bool IsExplored(int containers, int opened, double share) =>
-        containers > 0 && opened > 0 && opened >= RestockSettings.CleanShare(share) * containers;
+        containers > 0 && opened > 0 && opened >= Math.Ceiling(RestockSettings.CleanShare(share) * containers - 1e-9);
 
     /// <summary>Days until the restock, the same for the same location and timer start so a reload does not reroll it.</summary>
     public static int Roll(int mapId, int startDay, DayRange range)

@@ -173,7 +173,6 @@ internal static class RestockHooks
         return found;
     }
 
-
     private static string DueKey(int mapId) => $"lootrestock.due.{mapId}";
 
     private static string VisitKey(int mapId) => $"lootrestock.visit.{mapId}";

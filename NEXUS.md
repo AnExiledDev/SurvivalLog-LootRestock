@@ -11,10 +11,10 @@ Each location in Survival Log is stocked once, and survival point cards add to i
 [*][b]Restocks the containers you opened[/b]: when a location restocks, every container you opened since the last restock gets a new round of loot, on top of anything still inside.[/*]
 [*][b]Explore to start the timer[/b]: a location counts as explored once you have opened half its containers. Its timer starts on the day you explored it.[/*]
 [*][b]Its own timer for each location[/b]: small places like the Gas Station restock in 3-5 days, big ones like the Tech Company in 6-9. You can change each range.[/*]
-[*][b]No piling up[/b]: after a restock, a location waits until you explore it again. A place you skip or only half search never restocks twice.[/*]
+[*][b]No piling up[/b]: after a restock, a location waits until you explore it again. A place you skip or barely search never restocks twice.[/*]
 [*][b]Same loot as the game[/b]: a restock uses the game's own loot table for that container and your character, at the location's current discovery level.[/*]
 [/list]
-Restocks happen when you arrive at a location, not overnight. Restocked containers show as unsearched again. Only the six post-disaster exploration locations restock; your home, camps and pre-disaster locations are not affected.
+Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the six post-disaster exploration locations restock; your home, camps and pre-disaster locations are not affected.
 
 Loot Restock keeps a few numbers in your save (each location's restock day). It does not edit game files. You can remove it at any time; loot it already added stays.
 
@@ -68,7 +68,7 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-LootResto
 [*][b]不会越堆越多[/b]：补货之后，地点要等你再次探索才会再补。你不去或只搜了一点的地方，不会补第二次。[/*]
 [*][b]和游戏一样的物资[/b]：补货使用游戏自己为这个柜子和你的角色准备的物资表，按这个地点当前的发现等级刷新。[/*]
 [/list]
-补货在你到达地点时发生，不是在夜里。补过货的柜子会重新显示为未搜索。只有六个灾后探索地点会补货；家、营地和灾前地点不受影响。
+补货在你到达地点或在地点里换楼层时发生，不是在夜里。补过货的柜子会重新显示为未搜索。只有六个灾后探索地点会补货；家、营地和灾前地点不受影响。
 
 Loot Restock 会在存档里记下几个数字（每个地点的补货日）。不会修改游戏文件，随时可以移除；已经补进去的物资会留下。
 

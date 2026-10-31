@@ -59,6 +59,17 @@ public class ExploredTests
     }
 
     [Fact]
+    public void A_share_that_lands_on_a_whole_count_needs_exactly_that_many()
+    {
+        // 0.56 * 25 is 14.000000000000002 in floating point; opening 14 of 25 is opening 56%.
+        Assert.True(RestockRules.IsExplored(25, 14, 0.56));
+        Assert.False(RestockRules.IsExplored(25, 13, 0.56));
+        Assert.True(RestockRules.IsExplored(100, 7, 0.07));
+        Assert.True(RestockRules.IsExplored(10, 4, 0.31));
+        Assert.False(RestockRules.IsExplored(10, 3, 0.31));
+    }
+
+    [Fact]
     public void A_broken_share_falls_back_to_half()
     {
         Assert.False(RestockRules.IsExplored(10, 1, 0));

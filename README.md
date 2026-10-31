@@ -9,11 +9,11 @@ In Survival Log, each location is stocked once, and survival point cards add to 
 - **Restocks the containers you opened**: when a location restocks, every container you opened since the last restock gets a new round of loot, on top of anything still inside. Containers you never opened are left alone.
 - **Explore to start the timer**: a location counts as explored once you have opened half its containers. Its timer starts on the day you explored it.
 - **Its own timer for each location**: small places like the Gas Station restock in 3-5 days, big ones like the Tech Company in 6-9. You can change each range.
-- **No piling up**: after a restock, a location waits until you explore it again. A place you skip or only half search never restocks twice.
+- **No piling up**: after a restock, a location waits until you explore it again. A place you skip or barely search never restocks twice.
 - **Same loot as the game**: a restock uses the same loot table the game uses for that container and your character, at the location's current discovery level from survival point cards.
 - **Test buttons**: with Cheat Menu installed, its Mod tests tab shows this location's restock state, restocks it right away, makes its restock due today, or resets every timer.
 
-Restocks happen when you arrive at a location, not overnight. Restocked containers show as unsearched again. Only the six post-disaster exploration locations restock: Hardware Store, Gas Station, Deserted Supermarket, Abandoned School, Abandoned Hospital and Tech Company. Your home, camps and pre-disaster locations are not affected.
+Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the six post-disaster exploration locations restock: Hardware Store, Gas Station, Deserted Supermarket, Abandoned School, Abandoned Hospital and Tech Company. Your home, camps and pre-disaster locations are not affected.
 
 Loot Restock keeps a few numbers in your save (each location's restock day). It does not edit game files. You can remove it at any time; loot it already added stays.
 
@@ -62,7 +62,7 @@ A Survival Log wiki with detailed documentation for all of my mods is coming soo
 This is a BepInEx 6 IL2CPP plugin. It compiles against BepInEx and the game's IL2CPP interop assemblies, so a game install with BepInEx set up and started once is required. Those assemblies come from the game and are not part of this repo. The .NET 8 SDK is required.
 
 ```
-dotnet build src/LootRestock -c Release -p:GameDir="C:\path\to\Survival Log"
+dotnet build src/LootRestock -c Release -p:GameDir="C:\path\to\Survival Log" -p:ToolkitDll="C:\path\to\ExiledToolkit.dll"
 ```
 
 `GameDir` is the game folder. The default in the project file is a local path you will almost certainly need to override. The output DLL is at `src\LootRestock\bin\Release\LootRestock.dll`.

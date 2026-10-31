@@ -13,7 +13,9 @@ namespace LootRestock.Adapters;
 /// The game fills a location's containers once, ever, in FurnitureLootManager.RefreshForCurrentMap, which runs each time
 /// you arrive somewhere (it also adds a wave per survival point card). A postfix on it runs the restock cycle for
 /// post-disaster exploration locations (Config_MapPoint.PointCategory 2). A restock is one more FillRandomLoot per
-/// opened container, with the same loot group, count and discovery level as the game's own fill. The cycle's state
+/// opened container that has a random loot group, with the same loot group, count and discovery level as the game's own
+/// fill. Containers the map layout (Config_GuidanceFurniture) fills with a fixed list of items get that list back by
+/// chance (FixedRefill), less the one-time items. The cycle's state
 /// lives in the save as GameCounter entries per location: the day its timer started, the day of the last visit and the
 /// day of the last restock. A postfix on BattleLogicWorld.StartBattle logs every location's state when a save loads.
 /// The hooks fail soft, back to the game's own behavior.
@@ -30,6 +32,7 @@ internal static class RestockHooks
     private const int NoWaveFunc = 1765;
 
     private static readonly HashSet<string> Reported = new();
+    private static readonly Random Dice = new();
 
     private static ManualLogSource? _log;
     private static RestockSettings _settings = new(true, RestockSettings.DefaultShare, new Dictionary<int, DayRange>(), Locations.OtherDefault);
@@ -149,6 +152,7 @@ internal static class RestockHooks
 
         if (chapters == null || !chapters.TryGetValue(chapter, out var agents) || agents == null) return null;
 
+        var layout = new Layout(here);
         int containers = 0, opened = 0;
 
         foreach (var agent in agents)
@@ -159,9 +163,7 @@ internal static class RestockHooks
             // A bag furniture is created from its own config id, as the game's load does.
             var configId = agent.IsBagFurniture && agent.BagFurnitureConfigId != 0 ? agent.BagFurnitureConfigId : agent.AgentConfigId;
 
-            if (here.Configs.Get_Config_Furniture(configId) is not { } config) continue;
-            if (config.FurnitureFunc?.Contains(NoWaveFunc) == true) continue;
-            if (FurnitureLootManager.PickLootGroup(config, here.Character) <= 0) continue;
+            if (layout.Of(configId) is null) continue;
 
             containers++;
 
@@ -251,14 +253,70 @@ internal static class RestockHooks
     private static void Restock(Here here, List<Container> opened)
     {
         var discoverLv = ExploreDiscoveryTools.GetDiscoveryLv(here.MapId);
+        int random = 0, withFixed = 0, fixedNone = 0;
 
         foreach (var container in opened)
         {
-            FurnitureLootTools.FillRandomLoot(container.Furniture, container.Group, container.Count, false, null, discoverLv, 0);
-            container.Furniture.HasSearched = false;
+            var added = false;
+
+            if (container.Group > 0)
+            {
+                FurnitureLootTools.FillRandomLoot(container.Furniture, container.Group, container.Count, false, null, discoverLv, 0);
+                added = true;
+                random++;
+            }
+
+            if (container.Fixed.Count > 0)
+            {
+                var back = FixedRefill.Roll(container.Fixed, _settings.FixedContainerPercent, _settings.FixedItemPercent, Dice.NextDouble);
+
+                if (AddFixed(here, container.Furniture, back) > 0)
+                {
+                    added = true;
+                    withFixed++;
+                }
+                else
+                {
+                    fixedNone++;
+                }
+            }
+
+            // A container that got nothing back stays opened, so it does not look full when it is empty.
+            if (added) container.Furniture.HasSearched = false;
         }
 
-        _log?.LogInfo($"{here.Name} restocked on day {here.Today}: {opened.Count} containers");
+        _log?.LogInfo($"{here.Name} restocked on day {here.Today}: {opened.Count} opened containers, {random} got random loot, {withFixed} got fixed items back, {fixedNone} with fixed items got none this time");
+    }
+
+    /// <summary>
+    /// Puts fixed items into a container the way the game's own map layout fill does: in stacks no bigger than the
+    /// item's stack limit, fresh from this hour. Returns how many items went in.
+    /// </summary>
+    private static int AddFixed(Here here, Furniture furniture, List<ItemStack> items)
+    {
+        if (here.World._ItemManager is not { } manager) return 0;
+
+        var hour = here.World._GameTimeManager?.GetHour() ?? 0;
+        var added = 0;
+
+        foreach (var item in items)
+        {
+            if (here.Configs.Get_Config_Item(item.ItemId) is not { } config) continue;
+
+            var limit = config.StackLimit > 0 ? config.StackLimit : 1;
+
+            for (var left = item.Count; left > 0;)
+            {
+                var count = Math.Min(left, limit);
+
+                if (!manager.TryAddItemToBag(furniture.InstanceId, item.ItemId, count, hour, 24 * config.Life, 0, 1f, null, 0, null, null, 0, 0, false, false, false, false, 0)) break;
+
+                added += count;
+                left -= count;
+            }
+        }
+
+        return added;
     }
 
     /// <summary>The location you just arrived at, when it is a post-disaster exploration location. Upper floors count as their building.</summary>
@@ -280,23 +338,26 @@ internal static class RestockHooks
         return new Here(world, configs, mapId, loot._playerSelectId, time.GetDay(), NameOf(mapId));
     }
 
-    /// <summary>Every container the game's own fill would fill here: unlocked, with a random loot group for your character.</summary>
+    /// <summary>
+    /// Every container the game fills here: unlocked, with a random loot group for your character or a fixed list of
+    /// items from the map layout that can come back. Upper floors count as their building.
+    /// </summary>
     private static List<Container> Containers(Here here)
     {
         var found = new List<Container>();
-        var furnitures = here.World._AgentManager?.GetLootFurnitures(here.MapId, here.Character, false);
+        var furnitures = here.World._AgentManager?.GetAllFurnitures();
 
         if (furnitures == null) return found;
+
+        var layout = new Layout(here);
 
         foreach (var furniture in furnitures)
         {
             if (furniture == null || furniture.IsBagLocked) continue;
-            if (here.Configs.Get_Config_Furniture(furniture.AgentConfigId) is not { } config) continue;
-            if (config.FurnitureFunc?.Contains(NoWaveFunc) == true) continue;
+            if (!here.Configs.IsSameFloorScope(here.MapId, furniture.MapConfigId)) continue;
+            if (layout.Of(furniture.AgentConfigId) is not { } kind) continue;
 
-            var group = FurnitureLootManager.PickLootGroup(config, here.Character);
-
-            if (group > 0) found.Add(new Container(furniture, group, config.LootRandomCount));
+            found.Add(new Container(furniture, kind.Group, kind.Count, kind.Fixed));
         }
 
         return found;
@@ -317,5 +378,77 @@ internal static class RestockHooks
 
     internal sealed record Here(BattleLogicWorld World, ConfigManager Configs, int MapId, int Character, int Today, string Name);
 
-    private sealed record Container(Furniture Furniture, int Group, int Count);
+    private sealed record Container(Furniture Furniture, int Group, int Count, List<ItemStack> Fixed);
+
+    /// <summary>What the game fills one container with: a random loot group (0 for none) with its count, and fixed items that can come back.</summary>
+    private sealed record Kind(int Group, int Count, List<ItemStack> Fixed);
+
+    /// <summary>
+    /// A location's map layout, which says what each container is filled with. The layout is per chapter (each
+    /// post-disaster location is one), keyed by the furniture's config id, with one list for everyone and one per
+    /// character (ItemIdList_P1 to _P4), as AgentManager.LoadFurnitureFromGuidance reads them.
+    /// </summary>
+    private sealed class Layout
+    {
+        private readonly Here _here;
+        private readonly Dictionary<int, Config_GuidanceFurniture> _entries = new();
+
+        public Layout(Here here)
+        {
+            _here = here;
+
+            var chapter = here.Configs.Get_Config_MapPoint(here.MapId)?.ChapterID ?? here.MapId;
+            var entries = here.Configs.GetGuidanceFurnitureByChapterId(chapter);
+
+            if (entries == null) return;
+
+            foreach (var entry in entries)
+            {
+                if (entry == null || (entry.PlayerSelectId != 0 && entry.PlayerSelectId != here.Character)) continue;
+
+                _entries.TryAdd(entry.FurnitureId, entry);
+            }
+        }
+
+        /// <summary>What a furniture with this config id is filled with, or null when it is not a container the mod restocks.</summary>
+        public Kind? Of(int configId)
+        {
+            if (_here.Configs.Get_Config_Furniture(configId) is not { } config) return null;
+            if (config.FurnitureFunc?.Contains(NoWaveFunc) == true) return null;
+
+            var group = FurnitureLootManager.PickLootGroup(config, _here.Character);
+            var items = _entries.TryGetValue(configId, out var entry) ? FixedItems(entry) : new List<ItemStack>();
+
+            return group > 0 || items.Count > 0 ? new Kind(group, config.LootRandomCount, items) : null;
+        }
+
+        private List<ItemStack> FixedItems(Config_GuidanceFurniture entry)
+        {
+            var items = new List<ItemStack>();
+
+            Collect(items, entry.ItemIdList, entry.ItemCountList);
+
+            switch (_here.Character)
+            {
+                case 1: Collect(items, entry.ItemIdList_P1, entry.ItemCountList_P1); break;
+                case 2: Collect(items, entry.ItemIdList_P2, entry.ItemCountList_P2); break;
+                case 3: Collect(items, entry.ItemIdList_P3, entry.ItemCountList_P3); break;
+                case 4: Collect(items, entry.ItemIdList_P4, entry.ItemCountList_P4); break;
+            }
+
+            return items;
+        }
+
+        /// <summary>The game skips a list whose ids and counts differ in length, so this does too.</summary>
+        private void Collect(List<ItemStack> items, Il2CppSystem.Collections.Generic.List<int>? ids, Il2CppSystem.Collections.Generic.List<int>? counts)
+        {
+            if (ids == null || counts == null || ids.Count != counts.Count) return;
+
+            for (var i = 0; i < ids.Count; i++)
+            {
+                if (counts[i] <= 0 || _here.Configs.Get_Config_Item(ids[i]) is not { } item) continue;
+                if (FixedRefill.ComesBack(item.Category, item.Story)) items.Add(new ItemStack(ids[i], counts[i]));
+            }
+        }
+    }
 }

@@ -411,6 +411,23 @@ public class StatusTests
     }
 
     [Fact]
+    public void An_explored_location_without_a_timer_says_the_next_visit_starts_it()
+    {
+        // Opened enough on this visit; the timer only starts on arrival, so the load list must not ask for more opening.
+        var status = RestockRules.Status(School, 20, 32, 23, new LocationState(null, 18, null), Fixed);
+
+        Assert.Equal("23 of 32 containers opened, explored, the timer starts on the next visit, not restocked yet", status);
+    }
+
+    [Fact]
+    public void The_settings_line_shows_the_fixed_item_chances()
+    {
+        var settings = new RestockSettings(true, 0.5, new Dictionary<int, DayRange>(), new DayRange(5, 8), 40, 25);
+
+        Assert.Contains("fixed items come back in 40% of opened containers and 25% of each one's items", settings.Describe());
+    }
+
+    [Fact]
     public void The_settings_line_names_every_location_and_its_days()
     {
         var settings = new RestockSettings(false, 0.75, new Dictionary<int, DayRange> { [1003] = new(1, 1), [1000] = new(3, 5) }, new DayRange(5, 8));
@@ -422,5 +439,106 @@ public class StatusTests
         Assert.Contains("Hardware Store 3-5,", line);
         Assert.Contains("Abandoned School 5-8,", line);
         Assert.EndsWith("other locations 5-8", line);
+    }
+}
+
+public class FixedRefillTests
+{
+    private static readonly ItemStack[] Shelf = { new(101, 3), new(202, 1) };
+
+    /// <summary>Hands out the given rolls in order, and fails the test if the rule asks for more than it was given.</summary>
+    private static Func<double> Rolls(params double[] rolls)
+    {
+        var queue = new Queue<double>(rolls);
+
+        return () => queue.Count > 0 ? queue.Dequeue() : throw new InvalidOperationException("asked for more rolls than expected");
+    }
+
+    [Fact]
+    public void A_container_that_misses_its_roll_gets_nothing_and_rolls_no_items()
+    {
+        // 0.7 is not below 70%, so the container misses; no item rolls are drawn after that.
+        var back = FixedRefill.Roll(Shelf, 70, 100, Rolls(0.7));
+
+        Assert.Empty(back);
+    }
+
+    [Fact]
+    public void A_container_that_hits_its_roll_keeps_each_item_that_hits()
+    {
+        // Container 0.69 hits 70%. Item 101: 0.1 hits, 0.9 misses, 0.2 hits. Item 202: 0.6 misses.
+        var back = FixedRefill.Roll(Shelf, 70, 50, Rolls(0.69, 0.1, 0.9, 0.2, 0.6));
+
+        Assert.Equal(new[] { new ItemStack(101, 2) }, back);
+    }
+
+    [Fact]
+    public void At_100_percent_everything_comes_back_in_full()
+    {
+        var back = FixedRefill.Roll(Shelf, 100, 100, Rolls(0.999, 0.999, 0.999, 0.999, 0.999));
+
+        Assert.Equal(Shelf, back);
+    }
+
+    [Fact]
+    public void At_0_percent_nothing_comes_back()
+    {
+        Assert.Empty(FixedRefill.Roll(Shelf, 0, 100, Rolls(0.0)));
+        Assert.Empty(FixedRefill.Roll(Shelf, 100, 0, Rolls(0.0, 0.0, 0.0, 0.0, 0.0)));
+    }
+
+    [Fact]
+    public void Out_of_range_percents_are_held_to_0_and_100()
+    {
+        Assert.Equal(100, FixedRefill.CleanPercent(250));
+        Assert.Equal(0, FixedRefill.CleanPercent(-5));
+        Assert.Equal(70, FixedRefill.CleanPercent(70));
+    }
+
+    [Fact]
+    public void At_the_defaults_about_seven_in_ten_containers_refill_with_about_seven_in_ten_items()
+    {
+        var random = new Random(1234);
+        int refilled = 0, items = 0;
+
+        for (var i = 0; i < 10000; i++)
+        {
+            var back = FixedRefill.Roll(new[] { new ItemStack(1, 10) }, FixedRefill.DefaultContainerPercent, FixedRefill.DefaultItemPercent, random.NextDouble);
+
+            if (back.Count == 0) continue;
+
+            refilled++;
+            items += back[0].Count;
+        }
+
+        Assert.InRange(refilled, 6700, 7300);
+        Assert.InRange(items / (double)refilled, 6.7, 7.3);
+    }
+
+    [Theory]
+    [InlineData(17)]
+    [InlineData(18)]
+    [InlineData(19)]
+    [InlineData(20)]
+    [InlineData(21)]
+    [InlineData(22)]
+    public void One_time_kinds_never_come_back(int category)
+    {
+        Assert.False(FixedRefill.ComesBack(category, 0));
+    }
+
+    [Fact]
+    public void A_story_item_never_comes_back_whatever_its_kind()
+    {
+        Assert.False(FixedRefill.ComesBack(1, 1504));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(16)]
+    [InlineData(23)]
+    public void Ordinary_items_come_back(int category)
+    {
+        Assert.True(FixedRefill.ComesBack(category, 0));
     }
 }

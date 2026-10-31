@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Fixed: containers the game fills with set items instead of random loot never restocked, so the Tech Company, which has almost only these, never restocked at all. They now get their items back, minus keys, notes, story items and other one-time items.
+- Two new settings, `FixedContainerPercent` and `FixedItemPercent` (both 70 by default): the chance each such container gets anything back, and the chance each single item in it comes back. A refill is often smaller than the first fill, and some containers stay empty.
+- A container that gets nothing back at a restock stays searched.
+- The location list in the log says when a location is explored and its timer starts on the next visit, instead of asking you to open containers you already opened.
+
 ## 0.1.5
 
 - Fixed: the location list in the log showed 0 of 0 containers for every location you weren't at. It now reads them from the save, and a location you have never visited says so.

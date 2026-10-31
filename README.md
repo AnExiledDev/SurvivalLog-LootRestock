@@ -11,6 +11,7 @@ In Survival Log, each location is stocked once, and survival point cards add to 
 - **You pick how often**: each location has its own range of days in the config, so restocks come as fast or as slow as you want. Set a range such as 3-5, or one number such as 2.
 - **No piling up**: after a restock, a location waits until you explore it again. A place you skip or barely search never restocks twice.
 - **Same loot as the game**: a restock uses the same loot table the game uses for that container and your character, at the location's current discovery level from survival point cards.
+- **Set items come back by chance**: containers the game fills with the same items every time (most of the Tech Company) get them back, but only some containers, and only some of their items. Both chances are in the config. Keys, notes, story items and other one-time items never come back.
 - **Test buttons**: with Cheat Menu installed, its Mod tests tab shows this location's restock state, restocks it right away, makes its restock due today, or resets every timer.
 
 Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the post-disaster exploration locations restock: Hardware Store, Deserted Supermarket, Abandoned School, Abandoned Hospital and Tech Company. Your home, camps and pre-disaster locations are not affected.
@@ -43,7 +44,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.5 started`, followed by `hooked the location loot refresh` and `hooked the save load`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. The `settings:` line shows the settings the mod read, at start and after each change. When a save loads, the log lists every post-disaster location: how many of its containers are opened, its restock day or how many you still need to open to start its timer, and when it last restocked. A location you have never visited shows as not visited yet. Each time you arrive at one, it gets a line of its own.
+Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.6 started`, followed by `hooked the location loot refresh` and `hooked the save load`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. The `settings:` line shows the settings the mod read, at start and after each change. When a save loads, the log lists every post-disaster location: how many of its containers are opened, its restock day or how many you still need to open to start its timer, and when it last restocked. A location you have never visited shows as not visited yet. Each time you arrive at one, it gets a line of its own.
 
 ## Known issues
 

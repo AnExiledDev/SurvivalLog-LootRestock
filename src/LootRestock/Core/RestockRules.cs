@@ -53,7 +53,17 @@ public static class Locations
     public static readonly DayRange OtherDefault = new(5, 8);
 }
 
-public sealed record RestockSettings(bool Enabled, double ExploredShare, IReadOnlyDictionary<int, DayRange> Ranges, DayRange OtherRange)
+/// <summary>
+/// FixedContainerPercent is the chance an opened container with fixed items gets any of them back at a restock, and
+/// FixedItemPercent the chance each single item among them comes back.
+/// </summary>
+public sealed record RestockSettings(
+    bool Enabled,
+    double ExploredShare,
+    IReadOnlyDictionary<int, DayRange> Ranges,
+    DayRange OtherRange,
+    int FixedContainerPercent = FixedRefill.DefaultContainerPercent,
+    int FixedItemPercent = FixedRefill.DefaultItemPercent)
 {
     public const double DefaultShare = 0.5;
 
@@ -67,7 +77,61 @@ public sealed record RestockSettings(bool Enabled, double ExploredShare, IReadOn
     {
         var days = Locations.Known.Select(l => $"{l.English} {RangeFor(l.MapId)}").Append($"other locations {OtherRange}");
 
-        return $"{(Enabled ? "on" : "off")}, explored once {Math.Round(CleanShare(ExploredShare) * 100)}% of the containers are opened, days until a restock: {string.Join(", ", days)}";
+        return $"{(Enabled ? "on" : "off")}, explored once {Math.Round(CleanShare(ExploredShare) * 100)}% of the containers are opened, " +
+               $"fixed items come back in {FixedRefill.CleanPercent(FixedContainerPercent)}% of opened containers and {FixedRefill.CleanPercent(FixedItemPercent)}% of each one's items, " +
+               $"days until a restock: {string.Join(", ", days)}";
+    }
+}
+
+/// <summary>One item and how many of it.</summary>
+public readonly record struct ItemStack(int ItemId, int Count);
+
+/// <summary>
+/// Containers the game fills with a fixed list of items (from its own map layout) rather than random loot. At a
+/// restock, each opened one gets its list back by chance: first the container rolls whether it gets anything, then
+/// each single item rolls whether it comes back, so a refill is often smaller than the first fill.
+/// One-time things never come back: story items, keys, notes, keepsakes, records, wallpaper and vehicle parts.
+/// </summary>
+public static class FixedRefill
+{
+    public const int DefaultContainerPercent = 70;
+    public const int DefaultItemPercent = 70;
+
+    /// <summary>
+    /// Config_Item categories that hold one-time things: 17 vehicle parts, 18 notes and documents, 19 keepsakes and
+    /// ornaments, 20 records, 21 wallpaper and flooring, 22 keys and plans.
+    /// </summary>
+    public static readonly IReadOnlyCollection<int> OneTimeCategories = new HashSet<int> { 17, 18, 19, 20, 21, 22 };
+
+    /// <summary>Whether an item may come back at a restock: not tied to a story and not a one-time kind.</summary>
+    public static bool ComesBack(int category, int story) => story == 0 && !OneTimeCategories.Contains(category);
+
+    /// <summary>A percent below 0 or above 100 is held to that range.</summary>
+    public static int CleanPercent(int percent) => Math.Clamp(percent, 0, 100);
+
+    /// <summary>
+    /// What one opened container gets back. <paramref name="next"/> gives numbers from 0 up to but not including 1,
+    /// as Random.NextDouble does; a roll below the percent succeeds.
+    /// </summary>
+    public static List<ItemStack> Roll(IEnumerable<ItemStack> items, int containerPercent, int itemPercent, Func<double> next)
+    {
+        var back = new List<ItemStack>();
+
+        if (next() * 100 >= CleanPercent(containerPercent)) return back;
+
+        foreach (var item in items)
+        {
+            var kept = 0;
+
+            for (var i = 0; i < item.Count; i++)
+            {
+                if (next() * 100 < CleanPercent(itemPercent)) kept++;
+            }
+
+            if (kept > 0) back.Add(item with { Count = kept });
+        }
+
+        return back;
     }
 }
 
@@ -151,7 +215,9 @@ public static class RestockRules
             ? DueDay(mapId, start, settings) is var due && today >= due
                 ? $"timer started on day {start}, restock was due on day {due} and happens on the next visit"
                 : $"timer started on day {start}, restocks on day {due}"
-            : $"no timer, it starts once {NeededToExplore(containers, settings.ExploredShare)} are opened";
+            : IsExplored(containers, opened, settings.ExploredShare)
+                ? "explored, the timer starts on the next visit"
+                : $"no timer, it starts once {NeededToExplore(containers, settings.ExploredShare)} are opened";
         var restocked = state.LastRestockDay is { } day ? $"last restocked on day {day}" : "not restocked yet";
 
         return $"{opened} of {containers} containers opened, {timer}, {restocked}";

@@ -8,6 +8,8 @@ Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created t
 | --- | --- | --- |
 | `Enabled` | `true` | When `true`, exploration locations restock the containers you opened, a few days after you explored them. When `false`, nothing restocks. |
 | `ExploredShare` | `0.5` | How many of a location's containers you must open before it counts as explored and its restock timer starts. `0.5` means half, `1` means all of them. Any value from `0.05` to `1`. |
+| `FixedContainerPercent` | `70` | Some containers always hold the same items, placed by the game instead of picked at random. Most of the Tech Company is like this. When a location restocks, each of these you opened has this percent chance to get any of its items back. `0` means they never refill, `100` means all of them do. |
+| `FixedItemPercent` | `70` | For a container that gets its items back, the percent chance that each single item comes back, so a refill is often smaller than the first fill. Keys, notes, story items and other one-time items never come back. Any value from `0` to `100`. |
 
 ## Days
 

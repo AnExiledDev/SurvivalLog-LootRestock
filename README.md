@@ -8,12 +8,12 @@ In Survival Log, each location is stocked once, and survival point cards add to 
 
 - **Restocks the containers you opened**: when a location restocks, every container you opened since the last restock gets a new round of loot, on top of anything still inside. Containers you never opened are left alone.
 - **Explore to start the timer**: a location counts as explored once you have opened half its containers. Its timer starts on the day you explored it.
-- **Its own timer for each location**: small places like the Gas Station restock in 3-5 days, big ones like the Tech Company in 6-9. You can change each range.
+- **You pick how often**: each location has its own range of days in the config, so restocks come as fast or as slow as you want. Set a range such as 3-5, or one number such as 2.
 - **No piling up**: after a restock, a location waits until you explore it again. A place you skip or barely search never restocks twice.
 - **Same loot as the game**: a restock uses the same loot table the game uses for that container and your character, at the location's current discovery level from survival point cards.
 - **Test buttons**: with Cheat Menu installed, its Mod tests tab shows this location's restock state, restocks it right away, makes its restock due today, or resets every timer.
 
-Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the six post-disaster exploration locations restock: Hardware Store, Gas Station, Deserted Supermarket, Abandoned School, Abandoned Hospital and Tech Company. Your home, camps and pre-disaster locations are not affected.
+Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the post-disaster exploration locations restock: Hardware Store, Deserted Supermarket, Abandoned School, Abandoned Hospital and Tech Company. Your home, camps and pre-disaster locations are not affected.
 
 Loot Restock keeps a few numbers in your save (each location's restock day). It does not edit game files. You can remove it at any time; loot it already added stays.
 

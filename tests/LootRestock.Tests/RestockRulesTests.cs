@@ -177,7 +177,7 @@ public class ArriveTests
         Assert.True(arrival.Started);
         Assert.Equal(12, arrival.DueDay);
         Assert.True(arrival.Restock);
-        Assert.Equal(new LocationState(null, 15), arrival.Next);
+        Assert.Equal(new LocationState(null, 15, 15), arrival.Next);
     }
 
     [Fact]
@@ -204,7 +204,23 @@ public class ArriveTests
         var arrival = Arrive(today: 13, containers: 10, opened: 6, start: 9, lastVisit: 12);
 
         Assert.True(arrival.Restock);
-        Assert.Equal(new LocationState(null, 13), arrival.Next);
+        Assert.Equal(new LocationState(null, 13, 13), arrival.Next);
+    }
+
+    [Fact]
+    public void The_last_restock_day_is_kept_until_the_next_restock()
+    {
+        // Restocked on day 13, explored again by day 15: the timer starts, and the day 13 restock stays on record.
+        var explored = RestockRules.Arrive(School, new Visit(16, 10, 6, new LocationState(null, 15, 13)), Fixed);
+
+        Assert.True(explored.Started);
+        Assert.False(explored.Restock);
+        Assert.Equal(new LocationState(15, 16, 13), explored.Next);
+
+        var due = RestockRules.Arrive(School, new Visit(19, 10, 6, explored.Next), Fixed);
+
+        Assert.True(due.Restock);
+        Assert.Equal(19, due.Next.LastRestockDay);
     }
 
     [Fact]
@@ -361,5 +377,50 @@ public class OldTimerTests
         var start = RestockRules.StartOfOldTimer(Tech, 40, null, settings);
 
         Assert.InRange(RestockRules.DueDay(Tech, start, settings), 37, 40);
+    }
+}
+
+public class StatusTests
+{
+    private const int School = 1002;
+
+    private static readonly RestockSettings Fixed = new(true, 0.5, new Dictionary<int, DayRange> { [School] = new(4, 4) }, new DayRange(9, 9));
+
+    [Fact]
+    public void A_running_timer_shows_its_start_and_restock_day()
+    {
+        var status = RestockRules.Status(School, 10, 12, 7, new LocationState(9, 10, 2), Fixed);
+
+        Assert.Equal("7 of 12 containers opened, timer started on day 9, restocks on day 13, last restocked on day 2", status);
+    }
+
+    [Fact]
+    public void A_timer_past_its_day_says_the_next_visit_restocks()
+    {
+        var status = RestockRules.Status(School, 20, 12, 7, new LocationState(9, 10, null), Fixed);
+
+        Assert.Equal("7 of 12 containers opened, timer started on day 9, restock was due on day 13 and happens on the next visit, not restocked yet", status);
+    }
+
+    [Fact]
+    public void An_unexplored_location_says_how_many_must_be_opened()
+    {
+        var status = RestockRules.Status(School, 20, 12, 3, new LocationState(null, 18, 18), Fixed);
+
+        Assert.Equal("3 of 12 containers opened, no timer, it starts once 6 are opened, last restocked on day 18", status);
+    }
+
+    [Fact]
+    public void The_settings_line_names_every_location_and_its_days()
+    {
+        var settings = new RestockSettings(false, 0.75, new Dictionary<int, DayRange> { [1003] = new(1, 1), [1000] = new(3, 5) }, new DayRange(5, 8));
+
+        var line = settings.Describe();
+
+        Assert.StartsWith("off, explored once 75% of the containers are opened", line);
+        Assert.Contains("Tech Company 1,", line);
+        Assert.Contains("Hardware Store 3-5,", line);
+        Assert.Contains("Abandoned School 5-8,", line);
+        Assert.EndsWith("other locations 5-8", line);
     }
 }

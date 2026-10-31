@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- When a save loads, `BepInEx\LogOutput.log` lists every post-disaster location, even ones you are far from: containers opened, the restock day, and the day it last restocked.
+- The log shows the settings in use when the game starts and after each change.
+- With Cheat Menu installed, a new Mod tests button shows the same list in game.
+
 ## 0.1.3
 
 - Fixed: changing a location's days did nothing until its next restock. The new number of days now applies to a timer that is already counting.

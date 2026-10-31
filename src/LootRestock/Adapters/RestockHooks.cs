@@ -14,11 +14,17 @@ namespace LootRestock.Adapters;
 /// you arrive somewhere (it also adds a wave per survival point card). A postfix on it runs the restock cycle for
 /// post-disaster exploration locations (Config_MapPoint.PointCategory 2). A restock is one more FillRandomLoot per
 /// opened container, with the same loot group, count and discovery level as the game's own fill. The cycle's state
-/// lives in the save as two GameCounter entries per location, the day its timer started and the day of the last visit. The hook fails soft, back to the game's own behavior.
+/// lives in the save as GameCounter entries per location: the day its timer started, the day of the last visit and the
+/// day of the last restock. A postfix on BattleLogicWorld.StartBattle logs every location's state when a save loads.
+/// The hooks fail soft, back to the game's own behavior.
 /// </summary>
 internal static class RestockHooks
 {
     private const int ExplorationCategory = 2;
+
+    /// <summary>The map ids post-disaster locations use. Besides the known ones, only ids with a saved state are listed.</summary>
+    internal const int FirstMapId = 1000;
+    internal const int LastMapId = 1099;
 
     /// <summary>The game's own discovery waves skip containers with this function, so restocks do too.</summary>
     private const int NoWaveFunc = 1765;
@@ -44,9 +50,27 @@ internal static class RestockHooks
         {
             log.LogError($"could not hook the location loot refresh, locations never restock: {ex.Message}");
         }
+
+        try
+        {
+            var original = AccessTools.Method(typeof(BattleLogicWorld), nameof(BattleLogicWorld.StartBattle))
+                ?? throw new MissingMethodException("BattleLogicWorld.StartBattle");
+
+            harmony.Patch(original, postfix: new HarmonyMethod(typeof(RestockHooks), nameof(AfterLoad)));
+            log.LogInfo("hooked the save load");
+        }
+        catch (Exception ex)
+        {
+            log.LogError($"could not hook the save load, the log has no location overview when a save loads: {ex.Message}");
+        }
     }
 
-    public static void Use(RestockSettings settings) => _settings = settings;
+    /// <summary>Takes the settings at start and after each live change, and logs them so the log shows what was read.</summary>
+    public static void Use(RestockSettings settings)
+    {
+        _settings = settings;
+        _log?.LogInfo($"settings: {settings.Describe()}");
+    }
 
     private static void AfterRefresh(FurnitureLootManager __instance)
     {
@@ -61,6 +85,48 @@ internal static class RestockHooks
         {
             Report("restocking a location", ex);
         }
+    }
+
+    /// <summary>Runs after a save has loaded and its arrival is done, so the overview shows what the save holds now.</summary>
+    private static void AfterLoad()
+    {
+        try
+        {
+            if (Overview() is not { } lines) return;
+
+            foreach (var line in lines) _log?.LogInfo(line);
+        }
+        catch (Exception ex)
+        {
+            Report("listing the locations at load", ex);
+        }
+    }
+
+    /// <summary>
+    /// The settings in use, then one line per post-disaster location: the known ones, and any other that has a saved
+    /// state. Reads only, from wherever the player is. Null while no save is loaded.
+    /// </summary>
+    internal static List<string>? Overview()
+    {
+        var world = GameSingleton.Existing<BattleLogicWorld>();
+        var configs = GameSingleton.Existing<ConfigManager>();
+
+        if (world?._GameTimeManager is not { } time || world._FurnitureLootManager is not { } loot || configs == null) return null;
+
+        var today = time.GetDay();
+        var lines = new List<string> { $"day {today}, settings: {_settings.Describe()}" };
+        var known = Locations.Known.Select(l => l.MapId).ToList();
+        var others = Enumerable.Range(FirstMapId, LastMapId - FirstMapId + 1).Where(id => !known.Contains(id) && Read(id) != default);
+
+        foreach (var mapId in known.Concat(others))
+        {
+            var here = new Here(world, configs, mapId, loot._playerSelectId, today, NameOf(mapId));
+            var (containers, opened) = Count(here);
+
+            lines.Add($"{here.Name}: {RestockRules.Status(mapId, today, containers, opened, Read(mapId), _settings)}");
+        }
+
+        return lines;
     }
 
     private static void Arrive(Here here)
@@ -109,7 +175,7 @@ internal static class RestockHooks
         if (opened.Count == 0) return 0;
 
         Restock(here, opened);
-        Write(here.MapId, new LocationState(null, here.Today));
+        Write(here.MapId, new LocationState(null, here.Today, here.Today));
 
         return opened.Count;
     }
@@ -118,6 +184,7 @@ internal static class RestockHooks
     {
         var start = LocationState.Decode(GameCounter.GetCounter(StartKey(mapId)));
         var visit = LocationState.Decode(GameCounter.GetCounter(VisitKey(mapId)));
+        var restocked = LocationState.Decode(GameCounter.GetCounter(RestockedKey(mapId)));
 
         // A save from 0.1.2 or earlier holds the due day instead of the start day.
         if (start == null && LocationState.Decode(GameCounter.GetCounter(OldDueKey(mapId))) is { } oldDue)
@@ -125,13 +192,14 @@ internal static class RestockHooks
             start = RestockRules.StartOfOldTimer(mapId, oldDue, visit, _settings);
         }
 
-        return new LocationState(start, visit);
+        return new LocationState(start, visit, restocked);
     }
 
     internal static void Write(int mapId, LocationState state)
     {
         GameCounter.SetCounter(StartKey(mapId), LocationState.Encode(state.StartDay));
         GameCounter.SetCounter(VisitKey(mapId), LocationState.Encode(state.LastVisitDay));
+        GameCounter.SetCounter(RestockedKey(mapId), LocationState.Encode(state.LastRestockDay));
 
         if (GameCounter.GetCounter(OldDueKey(mapId)) != 0) GameCounter.SetCounter(OldDueKey(mapId), 0);
     }
@@ -197,6 +265,8 @@ internal static class RestockHooks
     private static string OldDueKey(int mapId) => $"lootrestock.due.{mapId}";
 
     private static string VisitKey(int mapId) => $"lootrestock.visit.{mapId}";
+
+    private static string RestockedKey(int mapId) => $"lootrestock.restocked.{mapId}";
 
     private static void Report(string operation, Exception ex)
     {

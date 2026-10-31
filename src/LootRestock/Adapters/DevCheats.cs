@@ -11,11 +11,8 @@ namespace LootRestock.Adapters;
 /// </summary>
 public static class DevCheats
 {
-    private const int FirstMapId = 1000;
-    private const int LastMapId = 1099;
-
     [DisplayName("Show this location\n查看当前地点")]
-    [Description("Shows the containers here, how many are opened, whether that counts as explored, and the restock day.\n显示这里的柜子数量、已打开数量、是否算已探索，以及补货日。")]
+    [Description("Shows the containers here, how many are opened, whether that counts as explored, the restock day and the last restock.\n显示这里的柜子数量、已打开数量、是否算已探索、补货日，以及上次补货。")]
     public static string ShowThisLocation()
     {
         if (Where(out var here) is { } problem) return problem;
@@ -25,9 +22,15 @@ public static class DevCheats
         var explored = RestockRules.IsExplored(containers, opened, RestockHooks.Settings.ExploredShare);
         var timer = state.StartDay is { } s ? $"timer started on day {s}, restocks on day {RestockRules.DueDay(here.MapId, s, RestockHooks.Settings)}" : "no timer running";
         var visit = state.LastVisitDay is { } v ? $"day {v}" : "none";
+        var restocked = state.LastRestockDay is { } r ? $"day {r}" : "none";
 
-        return $"{here.Name}, today is day {here.Today}: {opened} of {containers} containers opened, {(explored ? "explored" : "not explored")}. {timer}, last visit {visit}.";
+        return $"{here.Name}, today is day {here.Today}: {opened} of {containers} containers opened, {(explored ? "explored" : "not explored")}. {timer}, last visit {visit}, last restock {restocked}.";
     }
+
+    [DisplayName("Show all locations\n查看所有地点")]
+    [Description("Shows every post-disaster location from wherever you are: containers opened, the restock day and the last restock. The same list goes to the log when a save loads.\n在任何地方都能查看所有灾后地点：已打开的柜子、补货日和上次补货。读取存档时，同样的列表也会写进日志。")]
+    public static string ShowAllLocations() =>
+        RestockHooks.Overview() is { } lines ? string.Join("\n", lines) : "load a save first";
 
     [DisplayName("Restock here now\n立即在这里补货")]
     [Description("Restocks the opened containers here right away, whatever the timer says. Then the location waits to be explored again.\n不管倒计时，立即给这里打开过的柜子补货。之后这个地点要再次探索才会补货。")]
@@ -58,14 +61,14 @@ public static class DevCheats
     }
 
     [DisplayName("Reset all timers\n重置所有倒计时")]
-    [Description("Clears the restock timer and last visit of every location, as if the mod were just added.\n清除所有地点的补货倒计时和上次到访记录，就像刚装上这个模组一样。")]
+    [Description("Clears the restock timer, last visit and last restock of every location, as if the mod were just added.\n清除所有地点的补货倒计时、上次到访和上次补货记录，就像刚装上这个模组一样。")]
     public static string ResetAllTimers()
     {
         if (!RestockHooks.InGame) return "load a save first";
 
         var cleared = 0;
 
-        for (var mapId = FirstMapId; mapId <= LastMapId; mapId++)
+        for (var mapId = RestockHooks.FirstMapId; mapId <= RestockHooks.LastMapId; mapId++)
         {
             if (RestockHooks.Read(mapId) == default) continue;
 

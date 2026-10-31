@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LootRestock.Core;
 
@@ -60,13 +61,22 @@ public sealed record RestockSettings(bool Enabled, double ExploredShare, IReadOn
 
     /// <summary>A share outside 5% to 100% (or not a number) falls back to half.</summary>
     public static double CleanShare(double share) => double.IsNaN(share) || share < 0.05 || share > 1 ? DefaultShare : share;
+
+    /// <summary>The settings in use, in one line for the log, so a player can see their config file was read.</summary>
+    public string Describe()
+    {
+        var days = Locations.Known.Select(l => $"{l.English} {RangeFor(l.MapId)}").Append($"other locations {OtherRange}");
+
+        return $"{(Enabled ? "on" : "off")}, explored once {Math.Round(CleanShare(ExploredShare) * 100)}% of the containers are opened, days until a restock: {string.Join(", ", days)}";
+    }
 }
 
 /// <summary>
 /// What the mod remembers about one location, in the save. StartDay is the day its timer started, null while it waits
 /// to be explored. The due day is worked out from it on each arrival, so a changed day range applies to a running timer.
+/// LastRestockDay is the day the mod last added loot there.
 /// </summary>
-public readonly record struct LocationState(int? StartDay, int? LastVisitDay)
+public readonly record struct LocationState(int? StartDay, int? LastVisitDay, int? LastRestockDay = null)
 {
     /// <summary>The save holds whole numbers where 0 means unset, and day 0 is a real day, so each day is stored plus one.</summary>
     public static int Encode(int? day) => day is { } d && d >= 0 ? d + 1 : 0;
@@ -87,8 +97,9 @@ public readonly record struct Arrival(bool Restock, LocationState Next, bool Sta
 /// <summary>
 /// The restock cycle of one location. The game's own first fill counts as stocked. Once half the containers (the
 /// explored share) have been opened, the location's timer starts, dated to the visit where that happened. The timer
-/// runs for a number of days rolled from the location's day range as set at each arrival. When the timer runs out, the next arrival restocks the opened containers and marks them unopened, and the location waits to
-/// be explored again. A location nobody explores never restocks twice, so the mod's loot cannot pile up there.
+/// runs for a number of days rolled from the location's day range as set at each arrival. When the timer runs out, the
+/// next arrival restocks the opened containers and marks them unopened, and the location waits to be explored again.
+/// A location nobody explores never restocks twice, so the mod's loot cannot pile up there.
 /// </summary>
 public static class RestockRules
 {
@@ -125,7 +136,25 @@ public static class RestockRules
         int? due = start is { } s ? DueDay(mapId, s, settings) : null;
         var restock = due is { } d && visit.Today >= d && visit.Opened > 0;
 
-        return new Arrival(restock, new LocationState(restock ? null : start, visit.Today), started, due);
+        var next = restock ? new LocationState(null, visit.Today, visit.Today) : visit.State with { StartDay = start, LastVisitDay = visit.Today };
+
+        return new Arrival(restock, next, started, due);
+    }
+
+    /// <summary>
+    /// Where one location's cycle stands, in one line for the log: how much is opened, the timer, and the last restock.
+    /// Nothing here changes the location.
+    /// </summary>
+    public static string Status(int mapId, int today, int containers, int opened, LocationState state, RestockSettings settings)
+    {
+        var timer = state.StartDay is { } start
+            ? DueDay(mapId, start, settings) is var due && today >= due
+                ? $"timer started on day {start}, restock was due on day {due} and happens on the next visit"
+                : $"timer started on day {start}, restocks on day {due}"
+            : $"no timer, it starts once {NeededToExplore(containers, settings.ExploredShare)} are opened";
+        var restocked = state.LastRestockDay is { } day ? $"last restocked on day {day}" : "not restocked yet";
+
+        return $"{opened} of {containers} containers opened, {timer}, {restocked}";
     }
 
     /// <summary>
@@ -137,7 +166,6 @@ public static class RestockRules
     {
         var range = settings.RangeFor(mapId);
         var latest = Math.Min(lastVisitDay ?? int.MaxValue, oldDueDay - range.Min);
-
         var earliest = Math.Max(0, oldDueDay - range.Max);
 
         for (var start = latest; start >= earliest; start--)

@@ -43,7 +43,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.2 started`, followed by `hooked the location loot refresh`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. Each time you arrive at a post-disaster location, the log says how many of its containers are opened and on which day it restocks, or how many you still need to open to start its timer.
+Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.4 started`, followed by `hooked the location loot refresh` and `hooked the save load`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. The `settings:` line shows the settings the mod read, at start and after each change. When a save loads, the log lists every post-disaster location: how many of its containers are opened, its restock day or how many you still need to open to start its timer, and when it last restocked. Each time you arrive at one, it gets a line of its own.
 
 ## Known issues
 

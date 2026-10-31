@@ -14,7 +14,7 @@ namespace LootRestock;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.lootrestock";
-    private const string Version = "0.1.3";
+    private const string Version = "0.1.4";
 
     public override void Load()
     {

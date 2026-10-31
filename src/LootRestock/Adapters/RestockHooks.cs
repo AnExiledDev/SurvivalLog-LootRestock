@@ -121,12 +121,54 @@ internal static class RestockHooks
         foreach (var mapId in known.Concat(others))
         {
             var here = new Here(world, configs, mapId, loot._playerSelectId, today, NameOf(mapId));
-            var (containers, opened) = Count(here);
+            var live = Count(here);
 
-            lines.Add($"{here.Name}: {RestockRules.Status(mapId, today, containers, opened, Read(mapId), _settings)}");
+            // The game loads only the location the player is at; any other is read from the save.
+            if ((live.Containers > 0 ? live : Saved(here)) is { } count)
+            {
+                lines.Add($"{here.Name}: {RestockRules.Status(mapId, today, count.Containers, count.Opened, Read(mapId), _settings)}");
+            }
+            else
+            {
+                lines.Add($"{here.Name}: not visited yet");
+            }
         }
 
         return lines;
+    }
+
+    /// <summary>
+    /// A location's containers as the save holds them, counted the way <see cref="Containers"/> counts loaded ones.
+    /// Each post-disaster location is a chapter of its own, and the save keeps every chapter's agents, written each time
+    /// the player leaves one. Null when the save has nothing for it: the player has never been there.
+    /// </summary>
+    private static (int Containers, int Opened)? Saved(Here here)
+    {
+        var chapters = GameSingleton.Existing<GameSaveManager>()?.gameSave?.CurSave?.ChapterAgentMap;
+        var chapter = here.Configs.Get_Config_MapPoint(here.MapId)?.ChapterID ?? here.MapId;
+
+        if (chapters == null || !chapters.TryGetValue(chapter, out var agents) || agents == null) return null;
+
+        int containers = 0, opened = 0;
+
+        foreach (var agent in agents)
+        {
+            if (agent == null || agent.InstanceIdType != InstanceIdType.Furniture || agent.IsBagLocked) continue;
+            if (!here.Configs.IsSameFloorScope(here.MapId, agent.MapConfigId)) continue;
+
+            // A bag furniture is created from its own config id, as the game's load does.
+            var configId = agent.IsBagFurniture && agent.BagFurnitureConfigId != 0 ? agent.BagFurnitureConfigId : agent.AgentConfigId;
+
+            if (here.Configs.Get_Config_Furniture(configId) is not { } config) continue;
+            if (config.FurnitureFunc?.Contains(NoWaveFunc) == true) continue;
+            if (FurnitureLootManager.PickLootGroup(config, here.Character) <= 0) continue;
+
+            containers++;
+
+            if (agent.HasSearched) opened++;
+        }
+
+        return (containers, opened);
     }
 
     private static void Arrive(Here here)

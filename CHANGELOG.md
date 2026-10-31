@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+- Fixed: the location list in the log showed 0 of 0 containers for every location you weren't at. It now reads them from the save, and a location you have never visited says so.
+
 ## 0.1.4
 
 - When a save loads, `BepInEx\LogOutput.log` lists every post-disaster location, even ones you are far from: containers opened, the restock day, and the day it last restocked.

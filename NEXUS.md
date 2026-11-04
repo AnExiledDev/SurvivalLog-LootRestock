@@ -47,7 +47,7 @@ A location you had already half searched before installing the mod starts its ti
 Delete [font=Courier New]LootRestock.dll[/font] from the [font=Courier New]BepInEx\plugins[/font] folder.
 
 [size=5]Configuration[/size]
-To change settings, edit [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font] while the game is closed, or do it in game on the Mod Manager's Mods screen (see [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url] for every setting). Each location has its own range of days, such as [font=Courier New]3-5[/font]. [font=Courier New]ExploredShare[/font] sets how much of a location you must open to count as explored. Without Exiled's Toolkit installed, changes made on the Mods screen take effect at the next game start instead.
+To change settings, edit [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font] while the game is closed, or do it in game on the Mod Manager's Mods screen (see [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url] for every setting). Each location has its own range of days, such as [font=Courier New]3-5[/font]. [font=Courier New]ExploredShare[/font] sets how much of a location you must open to count as explored. With Exiled's Toolkit 0.17.0 or newer, each world can keep its own General settings: pick them for a new world in Customizable Difficulty, or, while you play, change them for that world alone on the Mods screen. Without Exiled's Toolkit installed, changes made on the Mods screen take effect at the next game start instead.
 
 [size=5]Feedback[/size]
 Found a bug or have an idea? Come say hi on the [url=https://discord.gg/trTsyxUFqg]Core Directive Discord[/url], or post in this page's Posts tab. For bugs, please include [font=Courier New]BepInEx\LogOutput.log[/font].
@@ -101,7 +101,7 @@ Loot Restock 会在存档里记下几个数字（每个地点的计时开始日�
 从 [font=Courier New]BepInEx\plugins[/font] 文件夹中删除 [font=Courier New]LootRestock.dll[/font]。
 
 [size=5]配置[/size]
-可以在游戏内 Mod Manager 的「模组」界面修改，也可以在游戏关闭时编辑 [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font]。配置文件中每项设置都有中文说明，完整说明见 [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url]（英文）。每个地点有自己的天数范围，比如 [font=Courier New]3-5[/font]。[font=Courier New]ExploredShare[/font] 设置一个地点要打开多少柜子才算探索过。没装 Exiled's Toolkit 的话，在「模组」界面的改动改为在下次启动游戏时生效。
+可以在游戏内 Mod Manager 的「模组」界面修改，也可以在游戏关闭时编辑 [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font]。配置文件中每项设置都有中文说明，完整说明见 [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url]（英文）。每个地点有自己的天数范围，比如 [font=Courier New]3-5[/font]。[font=Courier New]ExploredShare[/font] 设置一个地点要打开多少柜子才算探索过。装了 Exiled's Toolkit 0.17.0 或更新版本时，每个存档都可以有自己的 General 设置：新存档可以在「自定义难度」里选，游戏中也可以在「模组」界面只为当前存档修改。没装 Exiled's Toolkit 的话，在「模组」界面的改动改为在下次启动游戏时生效。
 
 [size=5]反馈[/size]
 发现 bug 或有好点子？欢迎来 [url=https://discord.gg/trTsyxUFqg]Core Directive Discord[/url] 打个招呼，或在本页的「Posts」标签里发帖。报告 bug 时，请附上 [font=Courier New]BepInEx\LogOutput.log[/font]。

@@ -38,13 +38,13 @@ Delete `LootRestock.dll` from the `BepInEx\plugins` folder. For a clean slate, a
 
 ## Configuration
 
-Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. See [CONFIG.md](CONFIG.md) for every setting. Without Exiled's Toolkit installed, changes made on the Mods screen take effect at the next game start instead.
+Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. See [CONFIG.md](CONFIG.md) for every setting. With Exiled's Toolkit 0.17.0 or newer, each world can keep its own General settings: pick them for a new world in Customizable Difficulty, or, while you play, change them for that world alone on the Mods screen. Without Exiled's Toolkit installed, changes made on the Mods screen take effect at the next game start instead.
 
 ## Troubleshooting
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.1.7 started`, followed by `hooked the location loot refresh` and `hooked the save load`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. The `settings:` line shows the settings the mod read, at start and after each change. When a save loads, the log lists every post-disaster location: how many of its containers are opened, its restock day or how many you still need to open to start its timer, and when it last restocked. A location you have never visited shows as not visited yet. Each time you arrive at one, it gets a line of its own.
+Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.2.0 started`, followed by `hooked the location loot refresh` and `hooked the save load`. A line starting with `could not hook` means the mod does not work on this game version, and locations work as in the unmodded game. The `settings:` line shows the settings the mod read, at start and after each change. When a save loads, the log lists every post-disaster location: how many of its containers are opened, its restock day or how many you still need to open to start its timer, and when it last restocked. A location you have never visited shows as not visited yet. Each time you arrive at one, it gets a line of its own.
 
 ## Known issues
 

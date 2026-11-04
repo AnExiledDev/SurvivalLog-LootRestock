@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+
+- Each world can keep its own Enabled, ExploredShare, FixedContainerPercent and FixedItemPercent. With Exiled's Toolkit 0.17.0 or newer, pick them for a new world in Customizable Difficulty, or change them for the world you are playing on the Mod Manager's Mods screen. The day ranges stay the same for every world.
+- Made for Survival Log 1.1.20151.
+
 ## 0.1.7
 
 - Fixed: the old recorder in the Abandoned Hospital could come back at a restock. Items with no price, which are one of a kind, never come back now.

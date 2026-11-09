@@ -12,7 +12,7 @@ Each location in Survival Log is stocked once, and survival point cards add to i
 [*][b]Explore to start the timer[/b]: a location counts as explored once you have opened half its containers. Its timer starts on the day you explored it.[/*]
 [*][b]You pick how often[/b]: each location has its own range of days in the config, so restocks come as fast or as slow as you want. Set a range such as 3-5, or one number such as 2.[/*]
 [*][b]No piling up[/b]: after a restock, a location waits until you explore it again. A place you skip or barely search never restocks twice.[/*]
-[*][b]Same loot as the game[/b]: a restock uses the game's own loot table for that container and your character, at the location's current discovery level.[/*]
+[*][b]Same loot as the game[/b]: a restock uses the game's loot table for that container and your character, at the location's current discovery level.[/*]
 [*][b]Set items come back by chance[/b]: containers the game fills with the same items every time (most of the Tech Company) get them back, but only some containers, and only some of their items. Both chances are in the config. A container that has both set items and a random loot table gets a round of random loot and its set items by chance. Keys, notes, story items and other one-time items never come back. A container that gets nothing back stays searched, and it does not count when you explore the location again.[/*]
 [/list]
 Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the post-disaster exploration locations restock; your home, camps and pre-disaster locations are not affected.

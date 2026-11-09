@@ -13,12 +13,12 @@ namespace LootRestock.Adapters;
 /// The game fills a location's containers once, ever, in FurnitureLootManager.RefreshForCurrentMap, which runs each time
 /// you arrive somewhere (it also adds a wave per survival point card). A postfix on it runs the restock cycle for
 /// post-disaster exploration locations (Config_MapPoint.PointCategory 2). A restock is one more FillRandomLoot per
-/// opened container that has a random loot group, with the same loot group, count and discovery level as the game's own
+/// opened container that has a random loot group, with the same loot group, count and discovery level as the game's
 /// fill. Containers the map layout (Config_GuidanceFurniture) fills with a fixed list of items get that list back by
 /// chance (FixedRefill), less the one-time items. The cycle's state
 /// lives in the save as GameCounter entries per location: the day its timer started, the day of the last visit, the
 /// day of the last restock and how many opened containers that restock left empty. A postfix on BattleLogicWorld.StartBattle logs every location's state when a save loads.
-/// The hooks fail soft, back to the game's own behavior.
+/// The hooks fail soft, back to the game's behavior.
 /// </summary>
 internal static class RestockHooks
 {
@@ -31,7 +31,7 @@ internal static class RestockHooks
     /// <summary>The map layout's ChapterType for rows that load in a post-disaster location (AgentManager.ShouldLoadFurniture).</summary>
     private const int PostDisasterChapterType = 5;
 
-    /// <summary>The game's own discovery waves skip containers with this function, so restocks do too.</summary>
+    /// <summary>The game's discovery waves skip containers with this function, so restocks do too.</summary>
     private const int NoWaveFunc = 1765;
 
     private static readonly HashSet<string> Reported = new();
@@ -309,7 +309,7 @@ internal static class RestockHooks
     }
 
     /// <summary>
-    /// Puts fixed items into a container the way the game's own map layout fill does: in stacks no bigger than the
+    /// Puts fixed items into a container the way the game's map layout fill does: in stacks no bigger than the
     /// item's stack limit, fresh from this hour. Returns how many items went in.
     /// </summary>
     private static int AddFixed(Here here, Furniture furniture, List<ItemStack> items)
@@ -395,7 +395,7 @@ internal static class RestockHooks
 
     private static void Report(string operation, Exception ex)
     {
-        if (Reported.Add(operation)) _log?.LogError($"{operation} failed, the location keeps the game's own loot (each kind reported once): {ex}");
+        if (Reported.Add(operation)) _log?.LogError($"{operation} failed, the location keeps the game's loot (each kind reported once): {ex}");
     }
 
     internal sealed record Here(BattleLogicWorld World, ConfigManager Configs, int MapId, int Character, int Today, string Name);

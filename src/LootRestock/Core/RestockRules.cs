@@ -177,7 +177,7 @@ public readonly record struct Visit(int Today, int Containers, int Opened, Locat
 public readonly record struct Arrival(bool Restock, LocationState Next, bool Started, int? DueDay);
 
 /// <summary>
-/// The restock cycle of one location. The game's own first fill counts as stocked. Once half the containers (the
+/// The restock cycle of one location. The game's first fill counts as stocked. Once half the containers (the
 /// explored share) have been opened, the location's timer starts, dated to the visit where that happened. The timer
 /// runs for a number of days rolled from the location's day range as set at each arrival. When the timer runs out, the
 /// next arrival restocks the opened containers and marks them unopened, and the location waits to be explored again.

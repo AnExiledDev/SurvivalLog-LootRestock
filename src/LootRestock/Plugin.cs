@@ -3,6 +3,7 @@ using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
+using ExiledToolkit.Game;
 using HarmonyLib;
 using LootRestock.Adapters;
 using LootRestock.Core;
@@ -10,19 +11,18 @@ using LootRestock.Core;
 namespace LootRestock;
 
 [BepInPlugin(Guid, "Loot Restock", Version)]
-[BepInDependency(OptionalLive.ToolkitGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(ToolkitGuid, ">=0.19.0")]
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.lootrestock";
-    private const string Version = "0.2.0";
+    private const string Version = "0.2.1";
+    private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
 
     /// <summary>Each world may keep its own value of a General setting (Exiled's Toolkit). The day ranges are text, so they stay global.</summary>
     private const string WorldRule = "ModManager.WorldRule";
 
     public override void Load()
     {
-        if (!OptionalLive.IsToolkitInstalled) Log.LogInfo(OptionalLive.MissingNote);
-
         var enabled = Config.Bind("General", "Enabled", true, new ConfigDescription(
             "When true, post-disaster exploration locations restock the containers you opened, a few days after you explored them. When false, nothing restocks.\n" +
             "设为 true 时，灾后的探索地点会在你探索过几天后，给你打开过的柜子补充新物资。设为 false 时，不会补货。",
@@ -50,12 +50,12 @@ public sealed class Plugin : BasePlugin
             "上面没有列出的探索地点（比如游戏更新新增的地点）补货需要的天数。写成 3-5，或者只写一个数字。修改也会用于已经在倒计时的地点。");
 
         Log.LogInfo($"===== Loot Restock {Version} started");
-        RestockHooks.Apply(new Harmony(Guid), Log);
+        RestockHooks.Apply(new PatchKit(new Harmony(Guid), Write), Log);
 
         var entries = new List<ConfigEntryBase> { enabled, share, fixedContainers, fixedItems, other };
 
         entries.AddRange(days.Values);
-        OptionalLive.Watch(() => RestockHooks.Use(Settings(enabled.Value, share.Value, fixedContainers.Value, fixedItems.Value, days, other)), entries.ToArray());
+        ExiledToolkit.LiveSettings.Watch(() => RestockHooks.Use(Settings(enabled.Value, share.Value, fixedContainers.Value, fixedItems.Value, days, other)), entries.ToArray());
     }
 
     private RestockSettings Settings(bool enabled, double share, int fixedContainers, int fixedItems, Dictionary<Location, ConfigEntry<string>> days, ConfigEntry<string> other)
@@ -72,5 +72,12 @@ public sealed class Plugin : BasePlugin
         Log.LogWarning($"{entry.Definition.Key} = \"{entry.Value}\" is not a day range like 3-5, so {fallback} is used");
 
         return fallback;
+    }
+
+    // A hook that could not go in is an error, so the Mod Manager can show the mod may need an update.
+    private void Write(string message)
+    {
+        if (HookFailure.Is(message)) Log.LogError(message);
+        else Log.LogInfo(message);
     }
 }

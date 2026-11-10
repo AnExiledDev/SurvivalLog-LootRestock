@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Logging;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
-using HarmonyLib;
 using LootRestock.Core;
 
 namespace LootRestock.Adapters;
@@ -40,35 +40,14 @@ internal static class RestockHooks
     private static ManualLogSource? _log;
     private static RestockSettings _settings = new(true, RestockSettings.DefaultShare, new Dictionary<int, DayRange>(), Locations.OtherDefault);
 
-    public static void Apply(Harmony harmony, ManualLogSource log)
+    public static void Apply(PatchKit hooks, ManualLogSource log)
     {
         _log = log;
 
-        try
-        {
-            var original = AccessTools.Method(typeof(FurnitureLootManager), nameof(FurnitureLootManager.RefreshForCurrentMap))
-                ?? throw new MissingMethodException("FurnitureLootManager.RefreshForCurrentMap");
-
-            harmony.Patch(original, postfix: new HarmonyMethod(typeof(RestockHooks), nameof(AfterRefresh)));
-            log.LogInfo("hooked the location loot refresh");
-        }
-        catch (Exception ex)
-        {
-            log.LogError($"could not hook the location loot refresh, locations never restock: {ex.Message}");
-        }
-
-        try
-        {
-            var original = AccessTools.Method(typeof(BattleLogicWorld), nameof(BattleLogicWorld.StartBattle))
-                ?? throw new MissingMethodException("BattleLogicWorld.StartBattle");
-
-            harmony.Patch(original, postfix: new HarmonyMethod(typeof(RestockHooks), nameof(AfterLoad)));
-            log.LogInfo("hooked the save load");
-        }
-        catch (Exception ex)
-        {
-            log.LogError($"could not hook the save load, the log has no location overview when a save loads: {ex.Message}");
-        }
+        hooks.Patch(typeof(RestockHooks), typeof(FurnitureLootManager), nameof(FurnitureLootManager.RefreshForCurrentMap),
+            postfix: nameof(AfterRefresh), done: "hooked the location loot refresh", consequence: "locations never restock");
+        hooks.Patch(typeof(RestockHooks), typeof(BattleLogicWorld), nameof(BattleLogicWorld.StartBattle),
+            postfix: nameof(AfterLoad), done: "hooked the save load", consequence: "the log has no location overview when a save loads");
     }
 
     /// <summary>Takes the settings at start and after each live change, and logs them so the log shows what was read.</summary>

@@ -15,7 +15,7 @@ namespace LootRestock;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.lootrestock";
-    private const string Version = "0.2.1";
+    private const string Version = "0.2.2";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
 
     /// <summary>Each world may keep its own value of a General setting (Exiled's Toolkit). The day ranges are text, so they stay global.</summary>

@@ -600,12 +600,22 @@ public class FixedRefillTests
     }
 
     [Fact]
-    public void A_container_with_a_loot_group_gets_random_loot_whatever_its_fixed_roll()
+    public void A_container_with_a_loot_group_and_fixed_items_gets_only_random_loot()
     {
-        var plan = FixedRefill.Plan(7, Shelf, 70, 70, Rolls(0.99));
+        // Both chances at 100 would bring every fixed item back; no rolls are handed out, so a roll for them fails the test.
+        var plan = FixedRefill.Plan(7, Shelf, 100, 100, Rolls());
 
         Assert.True(plan.Random);
         Assert.Empty(plan.Fixed);
+    }
+
+    [Fact]
+    public void A_container_with_only_fixed_items_that_hits_gets_them_back()
+    {
+        var plan = FixedRefill.Plan(0, Shelf, 100, 100, Rolls(0.0, 0.0, 0.0, 0.0, 0.0));
+
+        Assert.False(plan.Random);
+        Assert.Equal(Shelf, plan.Fixed);
     }
 
     [Fact]

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+- A container that has both set items and a random loot table now gets only a round of random loot at a restock. Before, it also rolled for its set items.
+- Made for Survival Log 1.1.20719.
+
 ## 0.2.2
 
 - The Mod Manager no longer says a restart is needed after you change a setting. Every setting already applied right away.

@@ -88,7 +88,7 @@ public readonly record struct ItemStack(int ItemId, int Count);
 
 /// <summary>
 /// Containers the game fills with a fixed list of items (from its own map layout) rather than random loot. At a
-/// restock, each opened one gets its list back by chance: first the container rolls whether it gets anything, then
+/// restock, each opened one with no random loot table gets its list back by chance: first the container rolls whether it gets anything, then
 /// each single item rolls whether it comes back, so a refill is often smaller than the first fill.
 /// One-time things never come back: story items, keys, notes, keepsakes, records, wallpaper, vehicle parts, and items
 /// with no price, which are one-of-a-kind finds such as the Hospital's old recorder.
@@ -136,10 +136,13 @@ public static class FixedRefill
     }
 
     /// <summary>
-    /// What one opened container gets at a restock: random loot when it has a loot group, and its fixed items by chance.
+    /// What one opened container gets at a restock. A container with a loot group gets a round of random loot and
+    /// nothing else, even when it also has fixed items. One with only fixed items gets them back by chance.
     /// </summary>
     public static Refill Plan(int group, IReadOnlyList<ItemStack> items, int containerPercent, int itemPercent, Func<double> next) =>
-        new(group > 0, items.Count > 0 ? Roll(items, containerPercent, itemPercent, next) : new List<ItemStack>());
+        group > 0
+            ? new(true, new List<ItemStack>())
+            : new(false, items.Count > 0 ? Roll(items, containerPercent, itemPercent, next) : new List<ItemStack>());
 }
 
 /// <summary>What one container gets at a restock: whether it gets random loot, and which fixed items come back.</summary>

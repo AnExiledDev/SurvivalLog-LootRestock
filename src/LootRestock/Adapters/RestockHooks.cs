@@ -264,7 +264,7 @@ internal static class RestockHooks
                 random++;
             }
 
-            if (container.Fixed.Count > 0)
+            else if (container.Fixed.Count > 0)
             {
                 if (AddFixed(here, container.Furniture, plan.Fixed) > 0)
                 {

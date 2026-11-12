@@ -1,23 +1,23 @@
 Name: Loot Restock
-Summary: Exploration locations restock the containers you opened, a few days after you explored them, with the same loot the game uses. How many days is up to you: every location has its own range in the config, so loot comes back as often or as rarely as you like. A place restocks once per exploration, so loot never piles up where you don't go.
+Summary: The containers you opened at exploration locations get fresh loot a few days after you explore them, from the same loot tables the game uses. You set how many days, and every location has its own range in the config, such as 3-5. A place only restocks again after you explore it again, so loot never piles up in places you skip or barely search.
 
 Description (BBCode):
 [center][img]https://sldb.core-directive.com/media/save/2-changes-stay.png[/img][/center]
 
-Each location in Survival Log is stocked once, and survival point cards add to it later. Once you have searched a place, it stays empty. Loot Restock brings fresh loot back to the places you keep exploring.
+Each location in Survival Log is stocked once, and survival point cards add more loot later. Once you have searched a place, it stays empty. Loot Restock brings fresh loot back to the places you keep exploring.
 
 [size=5]Main features[/size]
 [list]
-[*][b]Restocks the containers you opened[/b]: when a location restocks, every container you opened since the last restock gets a new round of loot, on top of anything still inside.[/*]
-[*][b]Explore to start the timer[/b]: a location counts as explored once you have opened half its containers. Its timer starts on the day you explored it.[/*]
+[*][b]Restocks the containers you opened[/b]: when a location restocks, every container you opened since the last restock gets a new round of loot, on top of anything still inside. Containers you never opened are left alone.[/*]
+[*][b]Explore to start the timer[/b]: a location counts as explored once you have opened half its containers, and you can change how many that takes. Its timer starts on the day you explored it.[/*]
 [*][b]You pick how often[/b]: each location has its own range of days in the config, so restocks come as fast or as slow as you want. Set a range such as 3-5, or one number such as 2.[/*]
 [*][b]No piling up[/b]: after a restock, a location waits until you explore it again. A place you skip or barely search never restocks twice.[/*]
-[*][b]Same loot as the game[/b]: a restock uses the game's loot table for that container and your character, at the location's current discovery level.[/*]
-[*][b]Set items come back by chance[/b]: containers the game fills with the same items every time (most of the Tech Company) get them back, but only some containers, and only some of their items. Both chances are in the config. A container that has both set items and a random loot table gets only a round of random loot. Keys, notes, story items and other one-time items never come back. A container that gets nothing back stays searched, and it does not count when you explore the location again.[/*]
+[*][b]Same loot as the game[/b]: a restock rolls from the same loot table the game uses for that container and your character, at the location's current discovery level from survival point cards.[/*]
+[*][b]Set items come back by chance[/b]: some containers hold the same items every time, like most of the Tech Company. They get their items back by chance, and you set both the chance a container refills and the chance each item comes back. A container with both set items and random loot gets only random loot. Keys, notes, story items and other one-time items never come back. A container that gets nothing back stays searched, and it doesn't count toward exploring the location again.[/*]
 [/list]
-Restocks happen when you arrive at a location or move between its floors, not overnight. Restocked containers show as unsearched again. Only the post-disaster exploration locations restock; your home, camps and pre-disaster locations are not affected.
+A location restocks when you arrive there or move between its floors. Restocked containers show as unsearched again. Only the post-disaster exploration locations restock: Hardware Store, Deserted Supermarket, Abandoned School, Abandoned Hospital and Tech Company. Your home, camps and pre-disaster locations are not affected.
 
-Loot Restock keeps a few numbers in your save (for each location: when its timer started, your last visit, its last restock, and how many containers that restock left empty). It does not edit game files. You can remove it at any time; loot it already added stays.
+Loot Restock keeps a few numbers in your save (for each location: when its timer started, your last visit, its last restock, and how many containers that restock left empty). It does not edit game files. You can remove it at any time, and any loot it already added stays.
 
 Works in English and Chinese.
 
@@ -48,11 +48,11 @@ A location you had already half searched before installing the mod starts its ti
 Delete [font=Courier New]LootRestock.dll[/font] from the [font=Courier New]BepInEx\plugins[/font] folder.
 
 [size=5]Configuration[/size]
-To change settings, edit [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font] while the game is closed, or do it in game on the Mod Manager's Mods screen (see [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url] for every setting). Each location has its own range of days, such as [font=Courier New]3-5[/font]. [font=Courier New]ExploredShare[/font] sets how much of a location you must open to count as explored. Each world can keep its own General settings: pick them for a new world in Customizable Difficulty, or, while you play, change them for that world alone on the Mods screen.
+Change settings in game on the Mod Manager's Mods screen, or edit [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font] while the game is closed. [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url] lists every setting. Each location has its own range of days, such as [font=Courier New]3-5[/font], and [font=Courier New]ExploredShare[/font] sets how many of a location's containers you must open before it counts as explored. Each world can keep its own General settings. Pick them for a new world in Customizable Difficulty, or change them on the Mods screen while you play, and only that world changes.
 
 [size=5]Feedback[/size]
 Found a bug or have an idea? Come say hi on the [url=https://discord.gg/trTsyxUFqg]Core Directive Discord[/url], or post in this page's Posts tab. For bugs, please include [font=Courier New]BepInEx\LogOutput.log[/font].
-To reach me directly, message [b]exiled.dev[/b] on Discord; you can find me in the [url=https://discord.gg/MZGg4gQAUe]official Survival Log Discord[/url]. I'm also on X as [url=https://x.com/AnExiledDev]@AnExiledDev[/url].
+To reach me directly, message [b]exiled.dev[/b] on Discord. You can find me in the [url=https://discord.gg/MZGg4gQAUe]official Survival Log Discord[/url]. I'm also on X as [url=https://x.com/AnExiledDev]@AnExiledDev[/url].
 
 [size=5]Source and license[/size]
 Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock]github.com/AnExiledDev/SurvivalLog-LootRestock[/url]
@@ -60,20 +60,20 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-LootResto
 [line]
 [size=5]简体中文[/size]
 
-在 Survival Log 里，每个地点的物资只会刷新一次，之后靠生存点卡牌追加。一个地方搜空了，就一直是空的。Loot Restock 会给你常去的地点补充新物资。
+在 Survival Log 里，每个地点的物资只会刷新一次，之后靠生存点卡牌追加。一个地方搜空了，就一直是空的。Loot Restock 会给你常去的地点补上新物资。
 
 [size=5]主要功能[/size]
 [list]
-[*][b]给打开过的柜子补货[/b]：地点补货时，自上次补货以来你打开过的每个柜子都会再多一轮物资，叠加在柜子里剩下的东西上。[/*]
-[*][b]探索后开始计时[/b]：一个地点打开过一半的柜子，就算探索过了，从那天开始计算补货天数。[/*]
+[*][b]给打开过的柜子补货[/b]：地点补货时，自上次补货以来你打开过的每个柜子都会再多一轮物资，叠加在柜子里剩下的东西上。没打开过的柜子不会变。[/*]
+[*][b]探索后开始计时[/b]：一个地点打开过一半的柜子，就算探索过了，这个比例可以自己设置。从探索的那天开始计算补货天数。[/*]
 [*][b]补货快慢由你决定[/b]：每个地点在配置里都有自己的天数范围，想多快或多慢补货都可以。可以写一个范围，比如 3-5，也可以写一个数字，比如 2。[/*]
 [*][b]不会越堆越多[/b]：补货之后，地点要等你再次探索才会再补。你不去或只搜了一点的地方，不会补第二次。[/*]
-[*][b]和游戏一样的物资[/b]：补货使用游戏自己为这个柜子和你的角色准备的物资表，按这个地点当前的发现等级刷新。[/*]
-[*][b]固定物品按几率补回[/b]：游戏每次都放同样物品的柜子（科技公司大多如此）也会补回，但只有部分柜子、部分物品会回来，两个几率都可以在配置里改。既有固定物品又有随机物资表的柜子，只补一轮随机物资。钥匙、笔记、剧情物品等一次性物品不会回来。什么都没补回的柜子仍算已搜索，再次探索这个地点时不算在内。[/*]
+[*][b]和游戏一样的物资[/b]：补货用的是游戏给这个柜子和你的角色用的同一张物资表，按这个地点当前的发现等级（来自生存点卡牌）刷新。[/*]
+[*][b]固定物品按几率补回[/b]：有些柜子每次都放同样的物品，科技公司大多如此。这些柜子会按几率补回物品，一个柜子能不能补回、每件物品能不能回来，这两个几率都由你设置。既有固定物品又有随机物资的柜子，只补随机物资。钥匙、笔记、剧情物品等一次性物品不会回来。什么都没补回的柜子仍算已搜索，再次探索这个地点时不算在内。[/*]
 [/list]
-补货在你到达地点或在地点里换楼层时发生，不是在夜里。补过货的柜子会重新显示为未搜索。只有灾后探索地点会补货；家、营地和灾前地点不受影响。
+补货在你到达地点或在地点里换楼层时发生。补过货的柜子会重新显示为未搜索。只有灾后探索地点会补货：社区检修小屋、残破超市、废弃学校、废弃医院和科技公司。家、营地和灾前地点不受影响。
 
-Loot Restock 会在存档里记下几个数字（每个地点的计时开始日、你上次到访、上次补货，以及那次补货有几个柜子没补回东西）。不会修改游戏文件，随时可以移除；已经补进去的物资会留下。
+Loot Restock 会在存档里记下几个数字（每个地点的计时开始日、你上次到访、上次补货，以及那次补货有几个柜子没补回东西）。不会修改游戏文件，随时可以移除，已经补进去的物资会留下。
 
 支持英文和中文。
 
@@ -103,7 +103,7 @@ Loot Restock 会在存档里记下几个数字（每个地点的计时开始日�
 从 [font=Courier New]BepInEx\plugins[/font] 文件夹中删除 [font=Courier New]LootRestock.dll[/font]。
 
 [size=5]配置[/size]
-可以在游戏内 Mod Manager 的「模组」界面修改，也可以在游戏关闭时编辑 [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font]。配置文件中每项设置都有中文说明，完整说明见 [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url]（英文）。每个地点有自己的天数范围，比如 [font=Courier New]3-5[/font]。[font=Courier New]ExploredShare[/font] 设置一个地点要打开多少柜子才算探索过。每个存档都可以有自己的 General 设置：新存档可以在「自定义难度」里选，游戏中也可以在「模组」界面只为当前存档修改。
+可以在游戏内 Mod Manager 的「模组」界面修改，也可以在游戏关闭时编辑 [font=Courier New]BepInEx\config\com.dev.survivallog.lootrestock.cfg[/font]。配置文件中每项设置都有中文说明，完整说明见 [url=https://github.com/AnExiledDev/SurvivalLog-LootRestock/blob/main/CONFIG.md]CONFIG.md[/url]（英文）。每个地点有自己的天数范围，比如 [font=Courier New]3-5[/font]。[font=Courier New]ExploredShare[/font] 设置一个地点要打开多少柜子才算探索过。每个存档都可以有自己的 General 设置。新存档可以在「自定义难度」里选，玩的时候也可以在「模组」界面修改，只会改变当前存档。
 
 [size=5]反馈[/size]
 发现 bug 或有好点子？欢迎来 [url=https://discord.gg/trTsyxUFqg]Core Directive Discord[/url] 打个招呼，或在本页的「Posts」标签里发帖。报告 bug 时，请附上 [font=Courier New]BepInEx\LogOutput.log[/font]。

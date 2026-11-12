@@ -9,11 +9,11 @@ Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created t
 | `Enabled` | `true` | When `true`, exploration locations restock the containers you opened, a few days after you explored them. When `false`, nothing restocks. |
 | `ExploredShare` | `0.5` | How many of a location's containers you must open before it counts as explored and its restock timer starts. `0.5` means half, `1` means all of them. Any value from `0.05` to `1`. |
 | `FixedContainerPercent` | `70` | Some containers always hold the same items, placed by the game instead of picked at random. Most of the Tech Company is like this. When a location restocks, each of these you opened has this percent chance to get any of its items back. `0` means they never refill, `100` means all of them do. Any value from `0` to `100`. |
-| `FixedItemPercent` | `70` | For a container that gets its items back, the percent chance that each single item comes back, so a refill is often smaller than the first fill. Keys, notes, story items and other one-time items never come back. Any value from `0` to `100`. |
+| `FixedItemPercent` | `70` | When a container that always holds the same items gets them back at a restock, this is the percent chance each single item comes back, so a refill is often smaller than the first fill. Keys, notes, story items and other one-time items never come back. Any value from `0` to `100`. |
 
 ## Days
 
-Each setting is the number of days after you explore a location until its containers restock. Write a range such as `3-5`, or one number such as `4`. A new number in the range is picked each time. Any value from `1` to `365`. A value the mod cannot read falls back to the default, with a line in `BepInEx\LogOutput.log`.
+Each setting is how many days a location waits after you explore it before its containers restock. Write a range such as `3-5` to get a random number of days from it each time, or one number such as `4`. Any value from `1` to `365`. A value the mod cannot read falls back to the default, with a line in `BepInEx\LogOutput.log`.
 
 | Setting | Default | Location |
 | --- | --- | --- |

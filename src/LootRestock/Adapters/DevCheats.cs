@@ -44,8 +44,8 @@ public static class DevCheats
         return opened == 0 ? $"{here!.Name}: no opened containers to restock" : $"{here!.Name}: {refilled} of {opened} opened containers got something back";
     }
 
-    [DisplayName("Restock due today\n今天到补货日")]
-    [Description("Makes this location's restock due by today. Leave and come back to test a real restock.\n让这个地点的补货日在今天或之前到期。离开再回来，就能测试真正的补货。")]
+    [DisplayName("Make restock due today\n设为今天补货")]
+    [Description("Moves this location's restock day to today, or as close to today as the save allows. Leave and come back to test a real restock.\n把这个地点的补货日提前到今天，存档太早时提前到最近的一天。离开再回来，就能测试真正的补货。")]
     public static string DueToday()
     {
         if (Where(out var here) is { } problem) return problem;

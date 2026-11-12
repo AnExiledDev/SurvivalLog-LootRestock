@@ -30,7 +30,7 @@
   <!-- What the Mod Manager's Mods screen shows about this mod. -->
   <ItemGroup>
     <AssemblyMetadata Include="ModManager.Name" Value="Loot Restock&#10;物资补货" />
-    <AssemblyMetadata Include="ModManager.Description" Value="Exploration locations restock the containers you opened, a few days after you explored them. Each location has its own timer, and a place you have not explored again does not restock again, so loot never piles up.&#10;灾后的探索地点会在你探索过几天后，给你打开过的柜子补充新物资。每个地点有自己的天数，没有再次探索的地点不会再次补货，所以物资不会越堆越多。" />
+    <AssemblyMetadata Include="ModManager.Description" Value="The containers you opened at exploration locations get fresh loot a few days after you explore them, and you set how many days for each location. A place only restocks again after you explore it again, so loot never piles up.&#10;灾后探索地点里你打开过的柜子，会在你探索几天后补上新物资，每个地点的天数由你设置。补货之后要再次探索才会再补，所以物资不会越堆越多。" />
     <AssemblyMetadata Include="ModManager.Author" Value="AnExiledDev" />
     <AssemblyMetadata Include="ModManager.Category" Value="Gameplay" />
     <AssemblyMetadata Include="ModManager.GameVersion" Value="1.1.20719" />

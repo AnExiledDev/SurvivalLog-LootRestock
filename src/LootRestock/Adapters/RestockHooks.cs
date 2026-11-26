@@ -247,7 +247,7 @@ internal static class RestockHooks
     private static (int Refilled, int Unrefilled) Restock(Here here, List<Container> opened)
     {
         var discoverLv = ExploreDiscoveryTools.GetDiscoveryLv(here.MapId);
-        int random = 0, withFixed = 0, fixedNone = 0, refilled = 0;
+        int random = 0, randomNone = 0, withFixed = 0, fixedNone = 0, refilled = 0;
 
         foreach (var container in opened)
         {
@@ -256,12 +256,21 @@ internal static class RestockHooks
 
             if (plan.Random)
             {
+                var before = ItemCount(here, container.Furniture);
+
                 FurnitureLootTools.FillRandomLoot(container.Furniture, container.Group, container.Count, false, null, discoverLv, 0);
 
-                // Marked unopened right away, so an error further on cannot make the next arrival fill it a second time.
-                container.Furniture.HasSearched = false;
-                added = true;
-                random++;
+                if (FixedRefill.GotRandomLoot(before, ItemCount(here, container.Furniture)))
+                {
+                    // Marked unopened right away, so an error further on cannot make the next arrival fill it a second time.
+                    container.Furniture.HasSearched = false;
+                    added = true;
+                    random++;
+                }
+                else
+                {
+                    randomNone++;
+                }
             }
 
             else if (container.Fixed.Count > 0)
@@ -282,10 +291,12 @@ internal static class RestockHooks
             if (added) refilled++;
         }
 
-        _log?.LogInfo($"{here.Name} restocked on day {here.Today}: {opened.Count} opened containers, {random} got random loot, {withFixed} got fixed items back, {fixedNone} with fixed items got none this time");
+        _log?.LogInfo($"{here.Name} restocked on day {here.Today}: {opened.Count} opened containers, {random} got random loot, {randomNone} rolled no random loot, {withFixed} got fixed items back, {fixedNone} with fixed items got none this time");
 
         return (refilled, opened.Count - refilled);
     }
+
+    private static int ItemCount(Here here, Furniture furniture) => here.World._ItemManager?.GetItemDataList(furniture.InstanceId)?.Count ?? 0;
 
     /// <summary>
     /// Puts fixed items into a container the way the game's map layout fill does: in stacks no bigger than the

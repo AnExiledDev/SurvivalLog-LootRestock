@@ -20,7 +20,7 @@ Loot Restock keeps a few numbers in your save (for each location: when its timer
 
 ## Requirements
 
-- Survival Log 1.1.20719. A game update can break it until the mod is updated.
+- Survival Log 1.1.21671. A game update can break it until the mod is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 - [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.19.0 or newer. Loot Restock does not load without it. It applies settings changed on the Mod Manager's Mods screen without restarting the game, and lets each world keep its own General settings.
 - Optional: [Mod Manager](https://www.nexusmods.com/survivallog/mods/73). With it, you can change every setting in game on its Mods screen and see what each one does, without opening the config file.
@@ -45,7 +45,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.lootrestock.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.2.4 started`, followed by `hooked the location loot refresh` and `hooked the save load`. A line starting with `could not hook` means part of the mod doesn't work on this game version, and the line says what stops working. The `settings:` line shows the settings the mod read, at start and after each change. When a save loads, the log lists every post-disaster location: how many of its containers are opened, its restock day or how many more you need to open to start its timer, and when it last restocked. A location you have never visited shows as `not visited yet`. Each time you arrive at a location, the log adds a line for it.
+Check `BepInEx\LogOutput.log` for `===== Loot Restock 0.2.5 started`, followed by `hooked the location loot refresh` and `hooked the save load`. A line starting with `could not hook` means part of the mod doesn't work on this game version, and the line says what stops working. The `settings:` line shows the settings the mod read, at start and after each change. When a save loads, the log lists every post-disaster location: how many of its containers are opened, its restock day or how many more you need to open to start its timer, and when it last restocked. A location you have never visited shows as `not visited yet`. Each time you arrive at a location, the log adds a line for it.
 
 ## Known issues
 

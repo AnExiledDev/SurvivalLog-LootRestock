@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.5
+
+- Fixed: on a low Exploration Resources level, a container could be restocked with nothing and still look full. It now stays opened until a restock puts something in it.
+- Made for Survival Log 1.1.21671.
+
 ## 0.2.4
 
 - Clearer wording in the settings, the Mod Manager description and the Cheat Menu test buttons. The "Restock due today" button is now called "Make restock due today".

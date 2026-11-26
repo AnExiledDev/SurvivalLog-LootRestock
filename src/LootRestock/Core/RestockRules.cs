@@ -139,6 +139,12 @@ public static class FixedRefill
     /// What one opened container gets at a restock. A container with a loot group gets a round of random loot and
     /// nothing else, even when it also has fixed items. One with only fixed items gets them back by chance.
     /// </summary>
+    /// <summary>
+    /// Whether a random fill put anything in. On a low Exploration Resources level the game's roll can give no copies,
+    /// and a container that got nothing must stay opened, or it looks full when it is empty.
+    /// </summary>
+    public static bool GotRandomLoot(int itemsBefore, int itemsAfter) => itemsAfter > itemsBefore;
+
     public static Refill Plan(int group, IReadOnlyList<ItemStack> items, int containerPercent, int itemPercent, Func<double> next) =>
         group > 0
             ? new(true, new List<ItemStack>())
